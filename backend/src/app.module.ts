@@ -11,6 +11,8 @@ import { FriendRequestsModule } from './friend-requests/friend-requests.module';
 import { FriendsModule } from './friends/friends.module';
 import { BlockedUsersModule } from './blocked-users/blocked-users.module';
 import { MessageReceiptsModule } from './message-receipts/message-receipts.module';
+import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { MessageReceiptsModule } from './message-receipts/message-receipts.modul
     FriendsModule,
     BlockedUsersModule,
     MessageReceiptsModule,
+    AuthModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

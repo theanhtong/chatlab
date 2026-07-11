@@ -1,26 +1,46 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
+import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
+  ) {}
+
+  async create(createUserDto: any): Promise<UserDocument> {
+    const { password, ...rest } = createUserDto;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new this.userModel({
+      ...rest,
+      password: hashedPassword,
+    });
+    return newUser.save();
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findByUsername(username: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ username }).exec();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findByPhone(phone: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ phone }).exec();
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findById(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(new Types.ObjectId(id)).exec();
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async updateOnlineStatus(userId: string, isOnline: boolean): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(
+      new Types.ObjectId(userId),
+      {
+        isOnline,
+        lastActiveAt: isOnline ? null : new Date(),
+      },
+      { new: true },
+    ).exec();
   }
 }
