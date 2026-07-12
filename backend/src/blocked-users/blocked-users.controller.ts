@@ -1,14 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
 import { BlockedUsersService } from './blocked-users.service';
-import { CreateBlockedUserDto } from './dto/create-blocked-user.dto';
-import { UpdateBlockedUserDto } from './dto/update-blocked-user.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('blocked-users')
+@UseGuards(JwtAuthGuard)
 export class BlockedUsersController {
   constructor(private readonly blockedUsersService: BlockedUsersService) {}
 
   @Post()
-  create(@Body() createBlockedUserDto: CreateBlockedUserDto) {
+  create(@Body() createBlockedUserDto: any) {
     return this.blockedUsersService.create(createBlockedUserDto);
   }
 
@@ -19,16 +19,11 @@ export class BlockedUsersController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.blockedUsersService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBlockedUserDto: UpdateBlockedUserDto) {
-    return this.blockedUsersService.update(+id, updateBlockedUserDto);
+    return this.blockedUsersService.findOne(id);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.blockedUsersService.remove(+id);
+    return this.blockedUsersService.remove(id);
   }
 }

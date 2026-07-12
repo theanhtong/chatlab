@@ -1,34 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Delete, Param, UseGuards, Req } from '@nestjs/common';
 import { FriendsService } from './friends.service';
-import { CreateFriendDto } from './dto/create-friend.dto';
-import { UpdateFriendDto } from './dto/update-friend.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('friends')
+@UseGuards(JwtAuthGuard)
 export class FriendsController {
-  constructor(private readonly friendsService: FriendsService) {}
-
-  @Post()
-  create(@Body() createFriendDto: CreateFriendDto) {
-    return this.friendsService.create(createFriendDto);
-  }
+  constructor(private readonly friendsService: FriendsService) { }
 
   @Get()
-  findAll() {
-    return this.friendsService.findAll();
+  async getFriends(@Req() req: any) {
+    const userId = req.user.sub;
+    return this.friendsService.getFriends(userId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.friendsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateFriendDto: UpdateFriendDto) {
-    return this.friendsService.update(+id, updateFriendDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.friendsService.remove(+id);
+  @Delete(':friendId')
+  async removeFriend(@Req() req: any, @Param('friendId') friendId: string) {
+    const userId = req.user.sub;
+    await this.friendsService.removeFriendship(userId, friendId);
+    return { message: 'Friend removed successfully' };
   }
 }

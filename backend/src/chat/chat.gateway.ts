@@ -129,6 +129,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return null;
   }
 
+  sendToUser(userId: string, event: string, data: any) {
+    this.server.to(`user_${userId}`).emit(event, data);
+  }
+
   @SubscribeMessage('ping')
   handlePing(@ConnectedSocket() client: Socket) {
     return { event: 'pong', data: 'hello!' };

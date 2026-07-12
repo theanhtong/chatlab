@@ -1,10 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { CreateBlockedUserDto } from './dto/create-blocked-user.dto';
-import { UpdateBlockedUserDto } from './dto/update-blocked-user.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { BlockedUser, BlockedUserDocument } from './schemas/blocked-user.schema';
 
 @Injectable()
 export class BlockedUsersService {
-  create(createBlockedUserDto: CreateBlockedUserDto) {
+  constructor(
+    @InjectModel(BlockedUser.name)
+    private readonly blockedUserModel: Model<BlockedUserDocument>,
+  ) { }
+
+  async isBlocked(userId: string, targetUserId: string): Promise<boolean> {
+    const block = await this.blockedUserModel.findOne({
+      $or: [
+        { userId: new Types.ObjectId(userId), blockedUserId: new Types.ObjectId(targetUserId) },
+        { userId: new Types.ObjectId(targetUserId), blockedUserId: new Types.ObjectId(userId) },
+      ],
+    }).exec();
+    return !!block;
+  }
+
+  create(createBlockedUserDto: any) {
     return 'This action adds a new blockedUser';
   }
 
@@ -12,15 +28,11 @@ export class BlockedUsersService {
     return `This action returns all blockedUsers`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} blockedUser`;
+  findOne(id: string) {
+    return this.blockedUserModel.findById(new Types.ObjectId(id)).exec();
   }
 
-  update(id: number, updateBlockedUserDto: UpdateBlockedUserDto) {
-    return `This action updates a #${id} blockedUser`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} blockedUser`;
+  remove(id: string) {
+    return this.blockedUserModel.findByIdAndDelete(new Types.ObjectId(id)).exec();
   }
 }
