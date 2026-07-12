@@ -9,4 +9,5 @@ export enum SocketEvent {
   MEMBER_JOINED = 'member-joined',
   MEMBER_LEFT = 'member-left',
   ROLE_UPDATED = 'role-updated',
+  MESSAGE_REVOKED = 'message-revoked',
 }

@@ -6,6 +6,7 @@ import { Message, MessageSchema } from './schemas/message.schema';
 import { AuthModule } from '../auth/auth.module';
 import { ConversationsModule } from '../conversations/conversations.module';
 import { MessageReceiptsModule } from '../message-receipts/message-receipts.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { MessageReceiptsModule } from '../message-receipts/message-receipts.modu
     AuthModule,
     forwardRef(() => ConversationsModule),
     MessageReceiptsModule,
+    forwardRef(() => ChatModule),
   ],
   controllers: [MessagesController],
   providers: [MessagesService],

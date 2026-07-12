@@ -14,7 +14,7 @@ export class Message {
   senderId: Types.ObjectId;
 
   @Prop({ default: null })
-  content: string;
+  content: string | null;
 
   @Prop({ default: MessageType.TEXT, enum: Object.values(MessageType) })
   type: MessageType;

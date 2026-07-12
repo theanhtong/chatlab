@@ -57,7 +57,6 @@ export class ConversationsService {
     const creatorObjectId = new Types.ObjectId(creatorId);
     const uniqueIds = Array.from(new Set(dto.participantIds.filter(id => id !== creatorId)));
 
-    // Verify all participants exist
     const participantsList = [
       { userId: creatorObjectId, role: ParticipantRole.ADMIN, joinedAt: new Date() }
     ];
@@ -84,14 +83,12 @@ export class ConversationsService {
 
     const savedGroup = await group.save();
 
-    // Populate user info for return and event
     const populated = await savedGroup.populate({
       path: 'participants.userId',
       model: 'User',
       select: '_id username displayName avatar isOnline lastActiveAt',
     });
 
-    // Notify all participants about group creation
     populated.participants.forEach(p => {
       this.chatGateway.sendToUser(p.userId._id.toString(), SocketEvent.GROUP_CREATED, populated);
     });
@@ -172,7 +169,6 @@ export class ConversationsService {
 
     const isSelfLeaving = actorId === targetUserId;
 
-    // Permissions: admin can remove anyone, moderator can remove members. Members can only leave themselves.
     if (!isSelfLeaving) {
       if (actorParticipant.role === ParticipantRole.MEMBER) {
         throw new ForbiddenException('Only group admins or moderators can kick members');
@@ -182,7 +178,6 @@ export class ConversationsService {
       }
     }
 
-    // Remove participant
     conversation.participants = conversation.participants.filter(p => p.userId.toString() !== targetUserId) as any;
 
     const saved = await conversation.save();
@@ -192,14 +187,12 @@ export class ConversationsService {
       select: '_id username displayName avatar isOnline lastActiveAt',
     });
 
-    // Notify target user that they left/were kicked
     this.chatGateway.sendToUser(targetUserId, SocketEvent.MEMBER_LEFT, {
       conversationId,
       leftUserId: targetUserId,
       kicked: !isSelfLeaving,
     });
 
-    // Notify remaining group members
     populated.participants.forEach(p => {
       this.chatGateway.sendToUser(p.userId._id.toString(), SocketEvent.MEMBER_LEFT, {
         conversationId,
@@ -318,5 +311,36 @@ export class ConversationsService {
       updateDto,
       { new: true }
     ).exec();
+  }
+
+  async searchConversations(userId: string, queryText: string): Promise<ConversationDocument[]> {
+    if (!queryText) {
+      return [];
+    }
+
+    const conversations = await this.conversationModel.find({
+      'participants.userId': new Types.ObjectId(userId),
+    })
+      .populate({
+        path: 'participants.userId',
+        model: 'User',
+        select: '_id username displayName avatar isOnline lastActiveAt',
+      })
+      .sort({ updatedAt: -1 })
+      .exec();
+
+    const regex = new RegExp(queryText, 'i');
+
+    return conversations.filter(c => {
+      if (c.type === ConversationType.GROUP) {
+        return regex.test(c.name);
+      } else {
+        const otherParticipant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
+        if (!otherParticipant || !otherParticipant.userId) return false;
+
+        const userObj = otherParticipant.userId as any;
+        return regex.test(userObj.username) || regex.test(userObj.displayName);
+      }
+    });
   }
 }

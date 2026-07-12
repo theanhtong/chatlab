@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Req, UseGuards, ForbiddenException, HttpCode, HttpStatus } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -10,6 +10,16 @@ export class MessagesController {
     private readonly messagesService: MessagesService,
     private readonly conversationsService: ConversationsService,
   ) {}
+
+  @Get('search')
+  async searchMessages(
+    @Req() req: any,
+    @Query('q') queryText: string,
+    @Query('conversationId') conversationId?: string,
+  ) {
+    const userId = req.user.sub;
+    return this.messagesService.searchMessages(userId, queryText, conversationId);
+  }
 
   @Get(':conversationId')
   async getHistory(
@@ -26,5 +36,15 @@ export class MessagesController {
     }
 
     return this.messagesService.getMessageHistory(conversationId, limit ? +limit : 50, before);
+  }
+
+  @Post(':id/revoke')
+  @HttpCode(HttpStatus.OK)
+  async revokeMessage(
+    @Req() req: any,
+    @Param('id') messageId: string,
+  ) {
+    const userId = req.user.sub;
+    return this.messagesService.revokeMessage(messageId, userId);
   }
 }

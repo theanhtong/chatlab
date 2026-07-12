@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Patch, Body, Req, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Body, Req, Param, Query, UseGuards } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -13,6 +13,15 @@ export class ConversationsController {
   async getConversations(@Req() req: any) {
     const userId = req.user.sub;
     return this.conversationsService.getConversations(userId);
+  }
+
+  @Get('search')
+  async searchConversations(
+    @Req() req: any,
+    @Query('q') queryText: string,
+  ) {
+    const userId = req.user.sub;
+    return this.conversationsService.searchConversations(userId, queryText);
   }
 
   @Post('direct')
