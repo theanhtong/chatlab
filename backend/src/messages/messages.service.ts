@@ -1,26 +1,101 @@
-import { Injectable } from '@nestjs/common';
-import { CreateMessageDto } from './dto/create-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { Message, MessageDocument } from './schemas/message.schema';
+import { ConversationsService } from '../conversations/conversations.service';
+import { MessageReceipt, MessageReceiptDocument } from '../message-receipts/schemas/message-receipt.schema';
+import { MessageStatus } from './enums/message-status.enum';
 
 @Injectable()
 export class MessagesService {
-  create(createMessageDto: CreateMessageDto) {
-    return 'This action adds a new message';
+  constructor(
+    @InjectModel(Message.name)
+    private readonly messageModel: Model<MessageDocument>,
+    @InjectModel(MessageReceipt.name)
+    private readonly messageReceiptModel: Model<MessageReceiptDocument>,
+    @Inject(forwardRef(() => ConversationsService))
+    private readonly conversationsService: ConversationsService,
+  ) {}
+
+  async createMessage(
+    conversationId: string,
+    senderId: string,
+    content: string,
+    type = 'text',
+  ): Promise<MessageDocument> {
+    const conversation = await this.conversationsService.findById(conversationId);
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    const isParticipant = conversation.participants.some(
+      p => p.userId.toString() === senderId,
+    );
+    if (!isParticipant) {
+      throw new BadRequestException('You are not a participant in this conversation');
+    }
+
+    const message = new this.messageModel({
+      conversationId: new Types.ObjectId(conversationId),
+      senderId: new Types.ObjectId(senderId),
+      content,
+      type,
+      status: 'sent',
+    });
+
+    const savedMessage = await message.save();
+
+    await this.conversationsService.update(conversationId, { updatedAt: new Date() });
+
+    return savedMessage.populate({
+      path: 'senderId',
+      model: 'User',
+      select: '_id username displayName avatar',
+    });
   }
 
-  findAll() {
-    return `This action returns all messages`;
-  }
+  async getMessageHistory(
+    conversationId: string,
+    limit = 50,
+    before?: string,
+  ): Promise<any[]> {
+    const query: any = {
+      conversationId: new Types.ObjectId(conversationId),
+    };
 
-  findOne(id: number) {
-    return `This action returns a #${id} message`;
-  }
+    if (before) {
+      query.createdAt = { $lt: new Date(before) };
+    }
 
-  update(id: number, updateMessageDto: UpdateMessageDto) {
-    return `This action updates a #${id} message`;
-  }
+    const messages = await this.messageModel.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .populate({
+        path: 'senderId',
+        model: 'User',
+        select: '_id username displayName avatar',
+      })
+      .lean()
+      .exec();
 
-  remove(id: number) {
-    return `This action removes a #${id} message`;
+    const messageIds = messages.map(m => m._id);
+    const receipts = await this.messageReceiptModel.find({
+      messageId: { $in: messageIds },
+      status: MessageStatus.SEEN,
+    }).exec();
+
+    const seenMap: { [key: string]: string[] } = {};
+    receipts.forEach(r => {
+      const mId = r.messageId.toString();
+      if (!seenMap[mId]) {
+        seenMap[mId] = [];
+      }
+      seenMap[mId].push(r.userId.toString());
+    });
+
+    return messages.map(m => ({
+      ...m,
+      seenByUserIds: seenMap[m._id.toString()] || [],
+    }));
   }
 }

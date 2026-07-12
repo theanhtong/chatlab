@@ -5,12 +5,17 @@ import {
   OnGatewayDisconnect,
   SubscribeMessage,
   ConnectedSocket,
+  MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
-import { Logger } from '@nestjs/common';
+import { ConversationsService } from '../conversations/conversations.service';
+import { MessagesService } from '../messages/messages.service';
+import { MessageReceiptsService } from '../message-receipts/message-receipts.service';
+import { SocketEvent } from './enums/socket-event.enum';
+import { Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -28,7 +33,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
-  ) {}
+    @Inject(forwardRef(() => ConversationsService))
+    private readonly conversationsService: ConversationsService,
+    private readonly messagesService: MessagesService,
+    private readonly messageReceiptsService: MessageReceiptsService,
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -58,7 +67,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const user = await this.usersService.updateOnlineStatus(userId, true);
 
-      this.server.emit('user-status', {
+      this.server.emit(SocketEvent.USER_STATUS, {
         userId,
         username,
         isOnline: true,
@@ -90,7 +99,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.log(`User ${username} is offline (all sockets disconnected)`);
         const updatedUser = await this.usersService.updateOnlineStatus(userId, false);
 
-        this.server.emit('user-status', {
+        this.server.emit(SocketEvent.USER_STATUS, {
           userId,
           username,
           isOnline: false,
@@ -129,8 +138,71 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return null;
   }
 
-  sendToUser(userId: string, event: string, data: any) {
+  sendToUser(userId: string, event: SocketEvent, data: any) {
     this.server.to(`user_${userId}`).emit(event, data);
+  }
+
+  @SubscribeMessage('send-message')
+  async handleSendMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId?: string; receiverId?: string; content: string; type?: string },
+  ) {
+    const user = client.data.user;
+    if (!user) {
+      this.logger.warn(`Unauthorized send-message attempt from socket ${client.id}`);
+      return { status: 'error', message: 'Unauthorized' };
+    }
+
+    const senderId = user.id;
+    let conversationId = data.conversationId;
+
+    try {
+      if (!conversationId) {
+        if (!data.receiverId) {
+          throw new BadRequestException('Either conversationId or receiverId must be provided');
+        }
+        const conversation = await this.conversationsService.findOrCreateDirect(senderId, data.receiverId);
+        conversationId = conversation._id.toString();
+      }
+
+      const message = await this.messagesService.createMessage(
+        conversationId,
+        senderId,
+        data.content,
+        data.type || 'text',
+      );
+
+      const conversation = await this.conversationsService.findById(conversationId);
+      if (conversation) {
+        conversation.participants.forEach(p => {
+          this.sendToUser(p.userId.toString(), SocketEvent.NEW_MESSAGE, message);
+        });
+      }
+
+      return { status: 'ok', conversationId, message };
+    } catch (error) {
+      this.logger.error(`Error sending message: ${error.message}`);
+      return { status: 'error', message: error.message };
+    }
+  }
+
+  @SubscribeMessage('read-message')
+  async handleReadMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: string; messageId: string },
+  ) {
+    const user = client.data.user;
+    if (!user) {
+      return { status: 'error', message: 'Unauthorized' };
+    }
+
+    try {
+      await this.messageReceiptsService.markAsSeen(user.id, data.conversationId, data.messageId);
+      return { status: 'ok', messageId: data.messageId };
+    } catch (error) {
+      this.logger.error(`Error marking message as seen: ${error.message}`);
+      return { status: 'error', message: error.message };
+    }
   }
 
   @SubscribeMessage('ping')

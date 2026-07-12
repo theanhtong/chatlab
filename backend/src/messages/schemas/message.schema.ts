@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { MessageType } from '../enums/message-type.enum';
+import { MessageStatus } from '../enums/message-status.enum';
 
 export type MessageDocument = HydratedDocument<Message>;
 
@@ -14,20 +16,23 @@ export class Message {
   @Prop({ default: null })
   content: string;
 
-  @Prop({ default: 'text', enum: ['text', 'image', 'file', 'system'] })
-  type: string;
+  @Prop({ default: MessageType.TEXT, enum: Object.values(MessageType) })
+  type: MessageType;
 
   @Prop({ type: [String], default: [] })
   attachments: string[];
 
-  @Prop({ default: 'sent', enum: ['sent', 'delivered', 'seen'] })
-  status: string;
+  @Prop({ default: MessageStatus.SENT, enum: Object.values(MessageStatus) })
+  status: MessageStatus;
 
   @Prop({ default: false })
   isRevoked: boolean;
 
   @Prop({ default: null })
   revokedAt: Date;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

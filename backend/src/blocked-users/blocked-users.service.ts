@@ -20,14 +20,6 @@ export class BlockedUsersService {
     return !!block;
   }
 
-  create(createBlockedUserDto: any) {
-    return 'This action adds a new blockedUser';
-  }
-
-  findAll() {
-    return `This action returns all blockedUsers`;
-  }
-
   findOne(id: string) {
     return this.blockedUserModel.findById(new Types.ObjectId(id)).exec();
   }

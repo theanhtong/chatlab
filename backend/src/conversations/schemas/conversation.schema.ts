@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { ParticipantRole } from '../enums/participant-role.enum';
+import { ConversationType } from '../enums/conversation-type.enum';
 
 export type ConversationDocument = HydratedDocument<Conversation>;
 
@@ -8,22 +10,22 @@ export class Participant {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ default: 'member', enum: ['member', 'admin', 'moderator'] })
-  role: string;
+  @Prop({ default: ParticipantRole.MEMBER, enum: Object.values(ParticipantRole) })
+  role: ParticipantRole;
 
   @Prop({ default: Date.now })
   joinedAt: Date;
 
   @Prop({ type: Types.ObjectId, ref: 'Message', default: null })
-  lastReadMessageId: Types.ObjectId;
+  lastReadMessageId: Types.ObjectId | null;
 }
 
 export const ParticipantSchema = SchemaFactory.createForClass(Participant);
 
 @Schema({ timestamps: true })
 export class Conversation {
-  @Prop({ required: true, enum: ['direct', 'group'] })
-  type: string;
+  @Prop({ required: true, enum: Object.values(ConversationType) })
+  type: ConversationType;
 
   @Prop({ default: '' })
   name: string;
