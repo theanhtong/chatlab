@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Req, Body, UseGuards, ForbiddenException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Query, Req, Body, UseGuards, ForbiddenException, HttpCode, HttpStatus } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -57,5 +57,28 @@ export class MessagesController {
   ) {
     const userId = req.user.sub;
     return this.messagesService.revokeMessage(messageId, userId);
+  }
+
+  @Get(':conversationId/pinned')
+  async getPinned(
+    @Req() req: any,
+    @Param('conversationId') conversationId: string,
+  ) {
+    const userId = req.user.sub;
+    const isParticipant = await this.conversationsService.hasParticipant(conversationId, userId);
+    if (!isParticipant) {
+      throw new ForbiddenException('You are not a participant in this conversation');
+    }
+    return this.messagesService.getPinnedMessages(conversationId);
+  }
+
+  @Patch(':id/pin')
+  async togglePin(
+    @Req() req: any,
+    @Param('id') messageId: string,
+    @Body('pin') pin: boolean,
+  ) {
+    const userId = req.user.sub;
+    return this.messagesService.togglePinMessage(messageId, userId, pin);
   }
 }

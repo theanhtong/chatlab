@@ -8,12 +8,18 @@ import { ChatGateway } from '../chat/chat.gateway';
 import { SocketEvent } from '../chat/enums/socket-event.enum';
 import { ConversationType } from './enums/conversation-type.enum';
 import { ParticipantRole } from './enums/participant-role.enum';
+import { Message, MessageDocument } from '../messages/schemas/message.schema';
+import { Friend, FriendDocument } from '../friends/schemas/friend.schema';
 
 @Injectable()
 export class ConversationsService {
   constructor(
     @InjectModel(Conversation.name)
     private readonly conversationModel: Model<ConversationDocument>,
+    @InjectModel(Message.name)
+    private readonly messageModel: Model<MessageDocument>,
+    @InjectModel(Friend.name)
+    private readonly friendModel: Model<FriendDocument>,
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
@@ -278,7 +284,7 @@ export class ConversationsService {
     return populated;
   }
 
-  async getConversations(userId: string, archived: boolean = false): Promise<ConversationDocument[]> {
+  async getConversations(userId: string): Promise<any[]> {
     const userObjectId = new Types.ObjectId(userId);
 
     const conversations = await this.conversationModel.find({
@@ -287,21 +293,47 @@ export class ConversationsService {
       .populate({
         path: 'participants.userId',
         model: 'User',
-        select: '_id username displayName avatar isOnline lastActiveAt',
+        select: '_id username displayName avatar isOnline lastActiveAt phone',
       })
       .exec();
 
-    const filtered = conversations.filter(c => {
-      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
-      if (!participant) return false;
-      const pArchived = participant.isArchived || false;
-      return pArchived === archived;
-    });
+    const friendships = await this.friendModel.find({
+      userId: userObjectId,
+    }).exec();
+    const friendIds = friendships.map(f => f.friendId.toString());
 
-    const pinned: ConversationDocument[] = [];
-    const unpinned: ConversationDocument[] = [];
+    const processed: any[] = [];
+    for (const c of conversations) {
+      const lastMsg = await this.messageModel.findOne({
+        conversationId: c._id,
+      })
+        .sort({ createdAt: -1 })
+        .populate({
+          path: 'senderId',
+          model: 'User',
+          select: '_id username displayName avatar',
+        })
+        .exec();
 
-    filtered.forEach(c => {
+      if (!lastMsg) {
+        if (c.type === ConversationType.DIRECT) {
+          const other = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
+          const otherId = other?.userId ? (other.userId as any)._id.toString() : null;
+          if (!otherId || !friendIds.includes(otherId)) {
+            continue; // Hide empty conversations with non-friends
+          }
+        }
+      }
+
+      const cObj = c.toObject() as any;
+      cObj.lastMessage = lastMsg ? lastMsg.toObject() : null;
+      processed.push(cObj);
+    }
+
+    const pinned: any[] = [];
+    const unpinned: any[] = [];
+
+    processed.forEach(c => {
       const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
       if (participant && participant.isPinned) {
         pinned.push(c);
@@ -319,8 +351,12 @@ export class ConversationsService {
     });
 
     unpinned.sort((a, b) => {
-      const timeA = new Date(a.updatedAt || a.createdAt).getTime();
-      const timeB = new Date(b.updatedAt || b.createdAt).getTime();
+      const timeA = a.lastMessage
+        ? new Date(a.lastMessage.createdAt).getTime()
+        : new Date(a.updatedAt || a.createdAt).getTime();
+      const timeB = b.lastMessage
+        ? new Date(b.lastMessage.createdAt).getTime()
+        : new Date(b.updatedAt || b.createdAt).getTime();
       return timeB - timeA;
     });
 
@@ -347,7 +383,7 @@ export class ConversationsService {
     ).exec();
   }
 
-  async searchConversations(userId: string, queryText: string): Promise<ConversationDocument[]> {
+  async searchConversations(userId: string, queryText: string): Promise<any[]> {
     if (!queryText) {
       return [];
     }
@@ -358,14 +394,46 @@ export class ConversationsService {
       .populate({
         path: 'participants.userId',
         model: 'User',
-        select: '_id username displayName avatar isOnline lastActiveAt',
+        select: '_id username displayName avatar isOnline lastActiveAt phone',
       })
-      .sort({ updatedAt: -1 })
       .exec();
+
+    const friendships = await this.friendModel.find({
+      userId: new Types.ObjectId(userId),
+    }).exec();
+    const friendIds = friendships.map(f => f.friendId.toString());
+
+    const processed: any[] = [];
+    for (const c of conversations) {
+      const lastMsg = await this.messageModel.findOne({
+        conversationId: c._id,
+      })
+        .sort({ createdAt: -1 })
+        .populate({
+          path: 'senderId',
+          model: 'User',
+          select: '_id username displayName avatar',
+        })
+        .exec();
+
+      if (!lastMsg) {
+        if (c.type === ConversationType.DIRECT) {
+          const other = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
+          const otherId = other?.userId ? (other.userId as any)._id.toString() : null;
+          if (!otherId || !friendIds.includes(otherId)) {
+            continue; // Hide empty conversations with non-friends
+          }
+        }
+      }
+
+      const cObj = c.toObject() as any;
+      cObj.lastMessage = lastMsg ? lastMsg.toObject() : null;
+      processed.push(cObj);
+    }
 
     const regex = new RegExp(queryText, 'i');
 
-    return conversations.filter(c => {
+    return processed.filter(c => {
       if (c.type === ConversationType.GROUP) {
         return regex.test(c.name);
       } else {
@@ -416,30 +484,5 @@ export class ConversationsService {
     });
   }
 
-  async toggleArchive(conversationId: string, userId: string, archive: boolean): Promise<ConversationDocument> {
-    const conversation = await this.conversationModel.findById(new Types.ObjectId(conversationId)).exec();
-    if (!conversation) {
-      throw new NotFoundException('Conversation not found');
-    }
 
-    const participant = conversation.participants.find(p => p.userId.toString() === userId);
-    if (!participant) {
-      throw new ForbiddenException('You are not a participant in this conversation');
-    }
-
-    participant.isArchived = archive;
-    participant.archivedAt = archive ? new Date() : null;
-
-    if (archive) {
-      participant.isPinned = false;
-      participant.pinnedAt = null;
-    }
-
-    const saved = await conversation.save();
-    return saved.populate({
-      path: 'participants.userId',
-      model: 'User',
-      select: '_id username displayName avatar isOnline lastActiveAt',
-    });
-  }
 }

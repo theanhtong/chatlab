@@ -8,9 +8,9 @@ export class FriendRequestsController {
   constructor(private readonly friendRequestsService: FriendRequestsService) { }
 
   @Post('send')
-  async sendRequest(@Req() req: any, @Body('username') username: string) {
+  async sendRequest(@Req() req: any, @Body('phone') phone: string) {
     const senderId = req.user.sub;
-    return this.friendRequestsService.sendFriendRequest(senderId, username);
+    return this.friendRequestsService.sendFriendRequest(senderId, phone);
   }
 
   @Get('pending/incoming')

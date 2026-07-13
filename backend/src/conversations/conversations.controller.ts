@@ -12,11 +12,9 @@ export class ConversationsController {
   @Get()
   async getConversations(
     @Req() req: any,
-    @Query('archived') archived?: string,
   ) {
     const userId = req.user.sub;
-    const isArchived = archived === 'true';
-    return this.conversationsService.getConversations(userId, isArchived);
+    return this.conversationsService.getConversations(userId);
   }
 
   @Get('search')
@@ -98,13 +96,4 @@ export class ConversationsController {
     return this.conversationsService.togglePin(conversationId, userId, pin);
   }
 
-  @Patch(':id/archive')
-  async toggleArchive(
-    @Req() req: any,
-    @Param('id') conversationId: string,
-    @Body('archive') archive: boolean,
-  ) {
-    const userId = req.user.sub;
-    return this.conversationsService.toggleArchive(conversationId, userId, archive);
-  }
 }

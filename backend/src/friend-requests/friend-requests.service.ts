@@ -20,10 +20,10 @@ export class FriendRequestsService {
     private readonly chatGateway: ChatGateway,
   ) { }
 
-  async sendFriendRequest(senderId: string, receiverUsername: string): Promise<any> {
-    const receiver = await this.usersService.findByUsername(receiverUsername);
+  async sendFriendRequest(senderId: string, phone: string): Promise<any> {
+    const receiver = await this.usersService.findByPhone(phone);
     if (!receiver) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found with this phone number');
     }
 
     const receiverId = receiver._id.toString();
