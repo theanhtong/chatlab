@@ -13,6 +13,7 @@ import { BlockedUsersModule } from './blocked-users/blocked-users.module';
 import { MessageReceiptsModule } from './message-receipts/message-receipts.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ChatModule } from './chat/chat.module';
     MessageReceiptsModule,
     AuthModule,
     ChatModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

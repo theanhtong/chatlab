@@ -10,9 +10,13 @@ export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   @Get()
-  async getConversations(@Req() req: any) {
+  async getConversations(
+    @Req() req: any,
+    @Query('archived') archived?: string,
+  ) {
     const userId = req.user.sub;
-    return this.conversationsService.getConversations(userId);
+    const isArchived = archived === 'true';
+    return this.conversationsService.getConversations(userId, isArchived);
   }
 
   @Get('search')
@@ -82,5 +86,25 @@ export class ConversationsController {
   ) {
     const userId = req.user.sub;
     return this.conversationsService.updateGroupDetails(conversationId, userId, name, avatar);
+  }
+
+  @Patch(':id/pin')
+  async togglePin(
+    @Req() req: any,
+    @Param('id') conversationId: string,
+    @Body('pin') pin: boolean,
+  ) {
+    const userId = req.user.sub;
+    return this.conversationsService.togglePin(conversationId, userId, pin);
+  }
+
+  @Patch(':id/archive')
+  async toggleArchive(
+    @Req() req: any,
+    @Param('id') conversationId: string,
+    @Body('archive') archive: boolean,
+  ) {
+    const userId = req.user.sub;
+    return this.conversationsService.toggleArchive(conversationId, userId, archive);
   }
 }

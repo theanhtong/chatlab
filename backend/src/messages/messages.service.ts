@@ -24,8 +24,10 @@ export class MessagesService {
   async createMessage(
     conversationId: string,
     senderId: string,
-    content: string,
-    type = 'text',
+    content: string | null,
+    type: string = 'text',
+    attachments: string[] = [],
+    parentId?: string,
   ): Promise<MessageDocument> {
     const conversation = await this.conversationsService.findById(conversationId);
     if (!conversation) {
@@ -39,11 +41,22 @@ export class MessagesService {
       throw new BadRequestException('You are not a participant in this conversation');
     }
 
+    let parentObjectId: Types.ObjectId | null = null;
+    if (parentId) {
+      const parentMessage = await this.messageModel.findById(new Types.ObjectId(parentId)).exec();
+      if (!parentMessage) {
+        throw new BadRequestException('Parent message not found');
+      }
+      parentObjectId = parentMessage._id;
+    }
+
     const message = new this.messageModel({
       conversationId: new Types.ObjectId(conversationId),
       senderId: new Types.ObjectId(senderId),
       content,
       type,
+      attachments,
+      parentId: parentObjectId,
       status: 'sent',
     });
 
@@ -51,11 +64,22 @@ export class MessagesService {
 
     await this.conversationsService.update(conversationId, { updatedAt: new Date() });
 
-    return savedMessage.populate({
-      path: 'senderId',
-      model: 'User',
-      select: '_id username displayName avatar',
-    });
+    return savedMessage.populate([
+      {
+        path: 'senderId',
+        model: 'User',
+        select: '_id username displayName avatar',
+      },
+      {
+        path: 'parentId',
+        select: '_id content senderId type attachments isRevoked',
+        populate: {
+          path: 'senderId',
+          model: 'User',
+          select: '_id username displayName avatar',
+        }
+      }
+    ]);
   }
 
   async getMessageHistory(
@@ -74,11 +98,22 @@ export class MessagesService {
     const messages = await this.messageModel.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
-      .populate({
-        path: 'senderId',
-        model: 'User',
-        select: '_id username displayName avatar',
-      })
+      .populate([
+        {
+          path: 'senderId',
+          model: 'User',
+          select: '_id username displayName avatar',
+        },
+        {
+          path: 'parentId',
+          select: '_id content senderId type attachments isRevoked',
+          populate: {
+            path: 'senderId',
+            model: 'User',
+            select: '_id username displayName avatar',
+          }
+        }
+      ])
       .lean()
       .exec();
 
@@ -97,11 +132,16 @@ export class MessagesService {
       seenMap[mId].push(r.userId.toString());
     });
 
-    return messages.map(m => ({
-      ...m,
-      content: m.isRevoked ? null : m.content,
-      seenByUserIds: seenMap[m._id.toString()] || [],
-    }));
+    return messages.map(m => {
+      if (m.parentId && (m.parentId as any).isRevoked) {
+        (m.parentId as any).content = null;
+      }
+      return {
+        ...m,
+        content: m.isRevoked ? null : m.content,
+        seenByUserIds: seenMap[m._id.toString()] || [],
+      };
+    });
   }
 
   async revokeMessage(messageId: string, userId: string): Promise<MessageDocument> {
@@ -171,5 +211,49 @@ export class MessagesService {
         select: '_id username displayName avatar',
       })
       .exec();
+  }
+
+  async shareMessage(userId: string, messageId: string, targetConversationIds: string[]): Promise<MessageDocument[]> {
+    const sourceMessage = await this.messageModel.findById(new Types.ObjectId(messageId)).exec();
+    if (!sourceMessage) {
+      throw new NotFoundException('Message not found');
+    }
+
+    const isSourceParticipant = await this.conversationsService.hasParticipant(sourceMessage.conversationId.toString(), userId);
+    if (!isSourceParticipant) {
+      throw new ForbiddenException('You are not a participant in the source conversation');
+    }
+
+    if (sourceMessage.isRevoked) {
+      throw new BadRequestException('Cannot share a revoked message');
+    }
+
+    const createdMessages: MessageDocument[] = [];
+
+    for (const targetId of targetConversationIds) {
+      const isTargetParticipant = await this.conversationsService.hasParticipant(targetId, userId);
+      if (!isTargetParticipant) {
+        throw new ForbiddenException(`You are not a participant in the target conversation: ${targetId}`);
+      }
+
+      const newMessage = await this.createMessage(
+        targetId,
+        userId,
+        sourceMessage.content,
+        sourceMessage.type,
+        sourceMessage.attachments || [],
+      );
+
+      const targetConversation = await this.conversationsService.findById(targetId);
+      if (targetConversation) {
+        targetConversation.participants.forEach(p => {
+          this.chatGateway.sendToUser(p.userId.toString(), SocketEvent.NEW_MESSAGE, newMessage);
+        });
+      }
+
+      createdMessages.push(newMessage);
+    }
+
+    return createdMessages;
   }
 }

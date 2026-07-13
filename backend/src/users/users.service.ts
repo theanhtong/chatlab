@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { User, UserDocument } from './schemas/user.schema';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -41,6 +42,14 @@ export class UsersService {
         lastActiveAt: isOnline ? null : new Date(),
       },
       { new: true },
+    ).exec();
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(
+      new Types.ObjectId(userId),
+      { $set: dto },
+      { new: true }
     ).exec();
   }
 }

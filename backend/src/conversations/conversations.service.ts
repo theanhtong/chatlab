@@ -106,13 +106,11 @@ export class ConversationsService {
       throw new BadRequestException('Cannot add members to a direct conversation');
     }
 
-    // Check permission of actor: must be admin or moderator
     const actorParticipant = conversation.participants.find(p => p.userId.toString() === actorId);
     if (!actorParticipant || ![ParticipantRole.ADMIN, ParticipantRole.MODERATOR].includes(actorParticipant.role)) {
       throw new ForbiddenException('Only group admins or moderators can add members');
     }
 
-    // Check if target already in group
     const isAlreadyMember = conversation.participants.some(p => p.userId.toString() === targetUserId);
     if (isAlreadyMember) {
       throw new BadRequestException('User is already a participant of this conversation');
@@ -280,17 +278,53 @@ export class ConversationsService {
     return populated;
   }
 
-  async getConversations(userId: string): Promise<ConversationDocument[]> {
-    return this.conversationModel.find({
-      'participants.userId': new Types.ObjectId(userId),
+  async getConversations(userId: string, archived: boolean = false): Promise<ConversationDocument[]> {
+    const userObjectId = new Types.ObjectId(userId);
+
+    const conversations = await this.conversationModel.find({
+      'participants.userId': userObjectId,
     })
       .populate({
         path: 'participants.userId',
         model: 'User',
         select: '_id username displayName avatar isOnline lastActiveAt',
       })
-      .sort({ updatedAt: -1 })
       .exec();
+
+    const filtered = conversations.filter(c => {
+      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+      if (!participant) return false;
+      const pArchived = participant.isArchived || false;
+      return pArchived === archived;
+    });
+
+    const pinned: ConversationDocument[] = [];
+    const unpinned: ConversationDocument[] = [];
+
+    filtered.forEach(c => {
+      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+      if (participant && participant.isPinned) {
+        pinned.push(c);
+      } else {
+        unpinned.push(c);
+      }
+    });
+
+    pinned.sort((a, b) => {
+      const pA = a.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+      const pB = b.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+      const timeA = pA?.pinnedAt ? new Date(pA.pinnedAt).getTime() : 0;
+      const timeB = pB?.pinnedAt ? new Date(pB.pinnedAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+    unpinned.sort((a, b) => {
+      const timeA = new Date(a.updatedAt || a.createdAt).getTime();
+      const timeB = new Date(b.updatedAt || b.createdAt).getTime();
+      return timeB - timeA;
+    });
+
+    return [...pinned, ...unpinned];
   }
 
   async findById(id: string): Promise<ConversationDocument | null> {
@@ -341,6 +375,71 @@ export class ConversationsService {
         const userObj = otherParticipant.userId as any;
         return regex.test(userObj.username) || regex.test(userObj.displayName);
       }
+    });
+  }
+
+  async togglePin(conversationId: string, userId: string, pin: boolean): Promise<ConversationDocument> {
+    const conversation = await this.conversationModel.findById(new Types.ObjectId(conversationId)).exec();
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    const participant = conversation.participants.find(p => p.userId.toString() === userId);
+    if (!participant) {
+      throw new ForbiddenException('You are not a participant in this conversation');
+    }
+
+    if (pin && !participant.isPinned) {
+      const pinnedCount = await this.conversationModel.countDocuments({
+        'participants': {
+          $elemMatch: {
+            userId: new Types.ObjectId(userId),
+            isPinned: true,
+          }
+        }
+      });
+      if (pinnedCount >= 3) {
+        throw new BadRequestException('You can only pin a maximum of 3 conversations');
+      }
+      participant.isPinned = true;
+      participant.pinnedAt = new Date();
+    } else if (!pin) {
+      participant.isPinned = false;
+      participant.pinnedAt = null;
+    }
+
+    const saved = await conversation.save();
+    return saved.populate({
+      path: 'participants.userId',
+      model: 'User',
+      select: '_id username displayName avatar isOnline lastActiveAt',
+    });
+  }
+
+  async toggleArchive(conversationId: string, userId: string, archive: boolean): Promise<ConversationDocument> {
+    const conversation = await this.conversationModel.findById(new Types.ObjectId(conversationId)).exec();
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
+
+    const participant = conversation.participants.find(p => p.userId.toString() === userId);
+    if (!participant) {
+      throw new ForbiddenException('You are not a participant in this conversation');
+    }
+
+    participant.isArchived = archive;
+    participant.archivedAt = archive ? new Date() : null;
+
+    if (archive) {
+      participant.isPinned = false;
+      participant.pinnedAt = null;
+    }
+
+    const saved = await conversation.save();
+    return saved.populate({
+      path: 'participants.userId',
+      model: 'User',
+      select: '_id username displayName avatar isOnline lastActiveAt',
     });
   }
 }

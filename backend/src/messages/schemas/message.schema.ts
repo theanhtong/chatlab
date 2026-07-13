@@ -13,7 +13,7 @@ export class Message {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   senderId: Types.ObjectId;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   content: string | null;
 
   @Prop({ default: MessageType.TEXT, enum: Object.values(MessageType) })
@@ -30,6 +30,9 @@ export class Message {
 
   @Prop({ default: null })
   revokedAt: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'Message', default: null })
+  parentId?: Types.ObjectId | null;
 
   createdAt: Date;
   updatedAt: Date;

@@ -17,6 +17,9 @@ export class User {
   @Prop({ default: '' })
   avatar: string;
 
+  @Prop({ default: '' })
+  bio: string;
+
   @Prop({ required: true, unique: true, trim: true })
   phone: string;
 

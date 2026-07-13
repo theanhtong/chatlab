@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Req, UseGuards, ForbiddenException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Req, Body, UseGuards, ForbiddenException, HttpCode, HttpStatus } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -19,6 +19,17 @@ export class MessagesController {
   ) {
     const userId = req.user.sub;
     return this.messagesService.searchMessages(userId, queryText, conversationId);
+  }
+
+  @Post('share')
+  @HttpCode(HttpStatus.OK)
+  async shareMessage(
+    @Req() req: any,
+    @Body('messageId') messageId: string,
+    @Body('targetConversationIds') targetConversationIds: string[],
+  ) {
+    const userId = req.user.sub;
+    return this.messagesService.shareMessage(userId, messageId, targetConversationIds);
   }
 
   @Get(':conversationId')

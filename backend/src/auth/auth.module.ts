@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -10,7 +10,7 @@ import { Otp, OtpSchema } from './schemas/otp.schema';
 
 @Module({
   imports: [
-    UsersModule,
+    forwardRef(() => UsersModule),
     SessionsModule,
     MongooseModule.forFeature([{ name: Otp.name, schema: OtpSchema }]),
     JwtModule.registerAsync({
@@ -28,4 +28,4 @@ import { Otp, OtpSchema } from './schemas/otp.schema';
   providers: [AuthService],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule { }

@@ -18,6 +18,18 @@ export class Participant {
 
   @Prop({ type: Types.ObjectId, ref: 'Message', default: null })
   lastReadMessageId: Types.ObjectId | null;
+
+  @Prop({ default: false })
+  isPinned?: boolean;
+
+  @Prop({ type: Date, default: null })
+  pinnedAt?: Date | null;
+
+  @Prop({ default: false })
+  isArchived?: boolean;
+
+  @Prop({ type: Date, default: null })
+  archivedAt?: Date | null;
 }
 
 export const ParticipantSchema = SchemaFactory.createForClass(Participant);
@@ -38,6 +50,9 @@ export class Conversation {
 
   @Prop({ type: [ParticipantSchema], default: [] })
   participants: Participant[];
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const ConversationSchema = SchemaFactory.createForClass(Conversation);

@@ -145,7 +145,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('send-message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId?: string; receiverId?: string; content: string; type?: string },
+    @MessageBody() data: { conversationId?: string; receiverId?: string; content: string | null; type?: string; attachments?: string[]; parentId?: string },
   ) {
     const user = client.data.user;
     if (!user) {
@@ -170,6 +170,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         senderId,
         data.content,
         data.type || 'text',
+        data.attachments || [],
+        data.parentId,
       );
 
       const conversation = await this.conversationsService.findById(conversationId);
