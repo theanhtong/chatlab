@@ -410,19 +410,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const searchedId = searchedUser?._id || searchedUser?.id;
   const isMe = !!(myId && searchedId && myId === searchedId);
 
-  const hasSentRequest = !isFriend && searchedId && (outgoingRequests || []).some(
-    (req: any) => (req.receiverId?._id || req.receiverId) === searchedId
-  );
-  const outgoingRequestObj = !isFriend && searchedId && (outgoingRequests || []).find(
-    (req: any) => (req.receiverId?._id || req.receiverId) === searchedId
-  );
+  const hasSentRequest = !isFriend && searchedId && (outgoingRequests || []).some((req: any) => {
+    const rId = req.receiverId?._id || req.receiverId;
+    return rId && rId.toString() === searchedId.toString();
+  });
+  const outgoingRequestObj = !isFriend && searchedId && (outgoingRequests || []).find((req: any) => {
+    const rId = req.receiverId?._id || req.receiverId;
+    return rId && rId.toString() === searchedId.toString();
+  });
 
-  const hasReceivedRequest = !isFriend && searchedId && (incomingRequests || []).some(
-    (req: any) => (req.senderId?._id || req.senderId) === searchedId
-  );
-  const incomingRequestObj = !isFriend && searchedId && (incomingRequests || []).find(
-    (req: any) => (req.senderId?._id || req.senderId) === searchedId
-  );
+  const hasReceivedRequest = !isFriend && searchedId && (incomingRequests || []).some((req: any) => {
+    const sId = req.senderId?._id || req.senderId;
+    return sId && sId.toString() === searchedId.toString();
+  });
+  const incomingRequestObj = !isFriend && searchedId && (incomingRequests || []).find((req: any) => {
+    const sId = req.senderId?._id || req.senderId;
+    return sId && sId.toString() === searchedId.toString();
+  });
 
   return (
     <div className="w-[380px] bg-slate-900 border-r border-slate-800 flex h-full text-slate-100 select-none">
@@ -793,7 +797,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           hasSentRequest ? (
                             <button
                               onClick={() => handleCancelRequest(outgoingRequestObj._id)}
-                              className="flex-1 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-slate-700/50"
+                              className="flex-1 py-1.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-rose-500/20"
                             >
                               <IconUserMinus size={13} />
                               <span>{lang === 'vi' ? 'Thu hồi' : 'Cancel'}</span>
@@ -809,7 +813,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               </button>
                               <button
                                 onClick={() => handleDeclineRequest(incomingRequestObj._id)}
-                                className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                                className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-350 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-slate-700/30"
                               >
                                 <IconX size={13} />
                                 <span>{lang === 'vi' ? 'Từ chối' : 'Decline'}</span>
@@ -818,7 +822,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           ) : (
                             <button
                               onClick={handleSendRequestFromCard}
-                              className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                              className="flex-1 py-1.5 bg-blue-600/15 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-blue-500/25"
                             >
                               <IconUserPlus size={13} />
                               <span>{lang === 'vi' ? 'Kết bạn' : 'Add Friend'}</span>
@@ -826,12 +830,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           )
                         )}
 
-                        <button
-                          onClick={handleToggleBlockFromCard}
-                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 ${isSearchedUserBlocked ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white'}`}
-                        >
-                          <span>{isSearchedUserBlocked ? (lang === 'vi' ? 'Bỏ chặn' : 'Unblock') : (lang === 'vi' ? 'Chặn' : 'Block')}</span>
-                        </button>
+                        {/* Show Block button ONLY when there are no pending requests */}
+                        {!hasSentRequest && !hasReceivedRequest && (
+                          <button
+                            onClick={handleToggleBlockFromCard}
+                            className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 ${isSearchedUserBlocked ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white'}`}
+                          >
+                            <span>{isSearchedUserBlocked ? (lang === 'vi' ? 'Bỏ chặn' : 'Unblock') : (lang === 'vi' ? 'Chặn' : 'Block')}</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
