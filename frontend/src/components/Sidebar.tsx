@@ -199,7 +199,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       });
       const data = await res.json();
       if (res.ok) {
-        setAddMessage({ text: 'Đã gửi lời mời kết bạn thành công!', isError: false });
         fetchFriendsData();
       } else {
         throw new Error(data.message || 'Không thể gửi lời mời kết bạn');
