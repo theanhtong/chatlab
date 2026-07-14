@@ -410,6 +410,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const searchedId = searchedUser?._id || searchedUser?.id;
   const isMe = !!(myId && searchedId && myId === searchedId);
 
+  const hasSentRequest = !isFriend && searchedId && (outgoingRequests || []).some(
+    (req: any) => (req.receiverId?._id || req.receiverId) === searchedId
+  );
+  const outgoingRequestObj = !isFriend && searchedId && (outgoingRequests || []).find(
+    (req: any) => (req.receiverId?._id || req.receiverId) === searchedId
+  );
+
+  const hasReceivedRequest = !isFriend && searchedId && (incomingRequests || []).some(
+    (req: any) => (req.senderId?._id || req.senderId) === searchedId
+  );
+  const incomingRequestObj = !isFriend && searchedId && (incomingRequests || []).find(
+    (req: any) => (req.senderId?._id || req.senderId) === searchedId
+  );
+
   return (
     <div className="w-[380px] bg-slate-900 border-r border-slate-800 flex h-full text-slate-100 select-none">
 
@@ -728,9 +742,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Results & Status Messages (Rendered below header) */}
             {(addMessage || searchedUser) && (
-              <div className="p-3 border-b border-slate-800/80 bg-slate-900/20 space-y-2 shrink-0">
+              <div className="p-3 border-b border-slate-800/60 bg-transparent space-y-2 shrink-0">
                 {addMessage && (
-                  <div className={`p-2 rounded-lg text-[10px] font-medium border ${addMessage.isError ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-green-500/10 border-green-500/20 text-green-400'}`}>
+                  <div className={`p-2 rounded-lg text-[10px] font-medium border ${addMessage.isError ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
                     {addMessage.text}
                   </div>
                 )}
@@ -776,13 +790,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </button>
 
                         {!isFriend && (
-                          <button
-                            onClick={handleSendRequestFromCard}
-                            className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
-                          >
-                            <IconUserPlus size={13} />
-                            <span>{lang === 'vi' ? 'Kết bạn' : 'Add Friend'}</span>
-                          </button>
+                          hasSentRequest ? (
+                            <button
+                              onClick={() => handleCancelRequest(outgoingRequestObj._id)}
+                              className="flex-1 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-slate-700/50"
+                            >
+                              <IconUserMinus size={13} />
+                              <span>{lang === 'vi' ? 'Thu hồi' : 'Cancel'}</span>
+                            </button>
+                          ) : hasReceivedRequest ? (
+                            <>
+                              <button
+                                onClick={() => handleAcceptRequest(incomingRequestObj._id)}
+                                className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                              >
+                                <IconCheck size={13} />
+                                <span>{lang === 'vi' ? 'Đồng ý' : 'Accept'}</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeclineRequest(incomingRequestObj._id)}
+                                className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                              >
+                                <IconX size={13} />
+                                <span>{lang === 'vi' ? 'Từ chối' : 'Decline'}</span>
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={handleSendRequestFromCard}
+                              className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                            >
+                              <IconUserPlus size={13} />
+                              <span>{lang === 'vi' ? 'Kết bạn' : 'Add Friend'}</span>
+                            </button>
+                          )
                         )}
 
                         <button
