@@ -358,7 +358,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                     alert('Lỗi khi thu hồi lời mời kết bạn.');
                   }
                 }}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 hover:text-white text-white font-bold rounded-lg transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 text-xs font-bold rounded-lg transition-colors cursor-pointer"
               >
                 Thu hồi lời mời
               </button>
@@ -382,7 +382,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                       alert('Lỗi khi đồng ý kết bạn.');
                     }
                   }}
-                  className="px-3 py-1.5 bg-green-600 hover:bg-green-500 hover:text-white text-white font-bold rounded-lg transition-colors cursor-pointer"
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 hover:text-white text-white font-bold rounded-lg transition-colors cursor-pointer"
                 >
                   Đồng ý
                 </button>
@@ -443,7 +443,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               </button>
             )}
 
-            {!hasSentRequest && (
+            {!hasSentRequest && !hasReceivedRequest && (
               <button
                 onClick={async () => {
                   if (!otherUserId) return;

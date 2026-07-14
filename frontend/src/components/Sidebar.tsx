@@ -971,14 +971,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 onClick={() => handleAcceptRequest(req._id)}
-                                className="p-1.5 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 bg-blue-600/15 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/25 rounded-lg transition-colors cursor-pointer"
                                 title={lang === 'vi' ? 'Đồng ý' : 'Accept'}
                               >
                                 <IconCheck size={14} />
                               </button>
                               <button
                                 onClick={() => handleDeclineRequest(req._id)}
-                                className="p-1.5 bg-rose-500/15 hover:bg-rose-550 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-lg transition-colors cursor-pointer"
                                 title={lang === 'vi' ? 'Từ chối' : 'Decline'}
                               >
                                 <IconX size={14} />
@@ -1020,7 +1020,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                             <button
                               onClick={() => handleCancelRequest(req._id)}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-rose-400 border border-slate-850 rounded-lg text-[10px] font-bold transition-all cursor-pointer shrink-0"
+                              className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-lg text-[10px] font-bold transition-all cursor-pointer shrink-0"
                               title={lang === 'vi' ? 'Thu hồi yêu cầu kết bạn' : 'Cancel request'}
                             >
                               {lang === 'vi' ? 'Thu hồi' : 'Cancel'}
