@@ -1,1 +1,83 @@
 @import "tailwindcss";
+
+/* Smooth transition for theme switching */
+body {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Premium Border Overrides for clean, high-end aesthetics */
+.border,
+.border-t,
+.border-b,
+.border-l,
+.border-r,
+.border-slate-800,
+.border-slate-750,
+.border-slate-850,
+.border-slate-900 {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.light .border,
+body.light .border-t,
+body.light .border-b,
+body.light .border-l,
+body.light .border-r,
+body.light .border-slate-800,
+body.light .border-slate-750,
+body.light .border-slate-850,
+body.light .border-slate-900 {
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Light Theme Variables and Utilities */
+body.light {
+  background-color: #f8fafc !important; /* bg-slate-50 */
+  color: #0f172a !important; /* text-slate-900 */
+}
+
+body.light .bg-slate-950,
+body.light .bg-slate-955 {
+  background-color: #f1f5f9 !important; /* bg-slate-100 */
+}
+
+body.light .bg-slate-900 {
+  background-color: #ffffff !important; /* white card background */
+}
+
+body.light .bg-slate-850,
+body.light .bg-slate-800 {
+  background-color: #f1f5f9 !important; /* bg-slate-100 */
+}
+
+body.light .hover\:bg-slate-850:hover,
+body.light .hover\:bg-slate-800:hover {
+  background-color: #e2e8f0 !important; /* bg-slate-200 */
+}
+
+body.light .text-slate-100,
+body.light .text-slate-200 {
+  color: #0f172a !important; /* text-slate-900 */
+}
+
+body.light .text-slate-300,
+body.light .text-slate-400 {
+  color: #334155 !important; /* text-slate-700 */
+}
+
+body.light .text-slate-500 {
+  color: #64748b !important; /* text-slate-500 */
+}
+
+/* Fix chat bubbles in light mode */
+body.light .bg-blue-600 {
+  background-color: #2563eb !important; /* blue-600 */
+}
+
+body.light .bg-blue-700\/40 {
+  background-color: rgba(37, 99, 235, 0.1) !important;
+}
+
+body.light .bg-slate-900\/60 {
+  background-color: rgba(241, 245, 249, 0.7) !important;
+}

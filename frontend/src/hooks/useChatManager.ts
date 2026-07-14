@@ -18,6 +18,7 @@ export function useChatManager() {
 
   // Modals & Menu states
   const [profileOpen, setProfileOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<any | null>(null);
   const [shareTargetMessage, setShareTargetMessage] = useState<any | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: any } | null>(null);
@@ -163,6 +164,10 @@ export function useChatManager() {
             setUser(userData);
             setToken(savedToken);
             localStorage.setItem('user', JSON.stringify(userData));
+
+            if (userData && userData.role === 'admin') {
+              setAdminOpen(true);
+            }
 
             // Pre-fetch friends list and requests
             fetchFriendsList(savedToken);
@@ -387,6 +392,9 @@ export function useChatManager() {
     localStorage.setItem('user', JSON.stringify(loggedUser));
     fetchFriendsList(newToken);
     fetchFriendRequests(newToken);
+    if (loggedUser && loggedUser.role === 'admin') {
+      setAdminOpen(true);
+    }
   };
 
   const handleLogout = () => {
@@ -554,6 +562,25 @@ export function useChatManager() {
   const otherUserId = otherParticipant?.userId?._id || otherParticipant?.userId;
   const isFriendOfConvo = !activeConversation || !isDirectChat || !!(otherUserId && friendsList.some(f => (f._id || f.id) === otherUserId.toString()));
 
+  const [theme, setTheme] = useState<'light' | 'dark'>((localStorage.getItem('theme') as any) || 'light');
+  const [lang, setLang] = useState<'vi' | 'en'>((localStorage.getItem('lang') as any) || 'vi');
+
+  useEffect(() => {
+    document.body.className = theme === 'light' ? 'light' : '';
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    localStorage.setItem('theme', next);
+  };
+
+  const toggleLang = () => {
+    const next = lang === 'vi' ? 'en' : 'vi';
+    setLang(next);
+    localStorage.setItem('lang', next);
+  };
+
   return {
     token,
     user,
@@ -575,6 +602,8 @@ export function useChatManager() {
     setIncomingRequestsCount,
     profileOpen,
     setProfileOpen,
+    adminOpen,
+    setAdminOpen,
     replyToMessage,
     setReplyToMessage,
     shareTargetMessage,
@@ -594,5 +623,10 @@ export function useChatManager() {
     fetchFriendsList,
     fetchFriendRequests,
     isFriendOfConvo,
+    theme,
+    toggleTheme,
+    lang,
+    toggleLang,
   };
 }
+

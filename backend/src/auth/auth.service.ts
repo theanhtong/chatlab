@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -122,6 +122,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (user.isBanned) {
+      throw new ForbiddenException('Tài khoản của bạn đã bị khóa bởi quản trị viên');
+    }
+
     if (!user.isPhoneVerified && !isDev) {
       throw new BadRequestException('Phone number is not verified');
     }
@@ -131,7 +135,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.generateTokens(user._id.toString(), user.username);
+    const tokens = await this.generateTokens(user._id.toString(), user.username, user.role || 'user');
     const refreshExpiresInDays = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRES_DAYS') || '7');
     const refreshExpiresAt = new Date(Date.now() + refreshExpiresInDays * 24 * 60 * 60 * 1000);
 
@@ -144,6 +148,7 @@ export class AuthService {
         username: user.username,
         displayName: user.displayName,
         avatar: user.avatar,
+        role: user.role || 'user',
       },
       ...tokens,
     };
@@ -177,7 +182,7 @@ export class AuthService {
         throw new UnauthorizedException('Session not found or expired');
       }
 
-      const tokens = await this.generateTokens(userId, username);
+      const tokens = await this.generateTokens(userId, username, user.role || 'user');
       const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
       matchingSession.refreshToken = hashedRefreshToken;
 
@@ -192,6 +197,7 @@ export class AuthService {
           username: user.username,
           displayName: user.displayName,
           avatar: user.avatar,
+          role: user.role || 'user',
         },
         ...tokens,
       };
@@ -220,8 +226,8 @@ export class AuthService {
     }
   }
 
-  async generateTokens(userId: string, username: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const payload = { sub: userId, username };
+  async generateTokens(userId: string, username: string, role: string): Promise<{ accessToken: string; refreshToken: string }> {
+    const payload = { sub: userId, username, role };
 
     const secret = this.configService.get<string>('JWT_SECRET') || 'default_jwt_secret_key_12345';
     const accessExpires = this.configService.get<string>('JWT_ACCESS_EXPIRES') || '15m';

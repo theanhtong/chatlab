@@ -40,6 +40,12 @@ export class User {
 
   @Prop({ default: null })
   lastActiveAt: Date;
+
+  @Prop({ default: 'user', enum: ['user', 'admin'] })
+  role: string;
+
+  @Prop({ default: false })
+  isBanned: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

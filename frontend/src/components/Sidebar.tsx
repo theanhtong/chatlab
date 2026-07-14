@@ -3,8 +3,7 @@ import {
   IconMessage, IconLogout, IconSettings, IconSearch,
   IconPin, IconDotsVertical, IconUsers, IconUserPlus,
   IconCheck, IconX, IconUserMinus, IconMessageCircle2,
-  IconUser, IconDatabase, IconChevronRight, IconWorld,
-  IconHelpCircle, IconTrash
+  IconUser, IconChevronRight, IconTrash, IconShield
 } from '@tabler/icons-react';
 
 interface SidebarProps {
@@ -28,6 +27,11 @@ interface SidebarProps {
   setIncomingRequests: React.Dispatch<React.SetStateAction<any[]>>;
   outgoingRequests: any[];
   setOutgoingRequests: React.Dispatch<React.SetStateAction<any[]>>;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  lang: 'vi' | 'en';
+  toggleLang: () => void;
+  onOpenAdmin: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -51,11 +55,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setIncomingRequests,
   outgoingRequests,
   setOutgoingRequests,
+  theme,
+  toggleTheme,
+  lang,
+  toggleLang,
+  onOpenAdmin,
 }) => {
   const [search, setSearch] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
+  const [subMenuOpen, setSubMenuOpen] = useState(false);
 
   // Friends Pane local states
   const [friendsSubTab, setFriendsSubTab] = useState<'list' | 'incoming' | 'outgoing'>('list');
@@ -73,6 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const handleCloseMenu = () => {
       setActiveMenuId(null);
       setSettingsMenuOpen(false);
+      setSubMenuOpen(false);
     };
     window.addEventListener('click', handleCloseMenu);
     return () => window.removeEventListener('click', handleCloseMenu);
@@ -422,7 +433,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               setActiveTab('chats');
               setSearchedUser(null);
             }}
-            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${activeTab === 'chats' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${
+              activeTab === 'chats' 
+                ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400') 
+                : (theme === 'light' ? 'text-slate-550 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200')
+            }`}
             title="Tin nhắn"
           >
             <IconMessage size={22} />
@@ -431,104 +446,139 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Friends Icon Tab */}
           <button
             onClick={() => setActiveTab('friends')}
-            className={`p-2.5 rounded-xl cursor-pointer transition-colors relative ${activeTab === 'friends' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors relative ${
+              activeTab === 'friends' 
+                ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400') 
+                : (theme === 'light' ? 'text-slate-550 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200')
+            }`}
             title="Danh bạ"
           >
             <IconUsers size={22} />
             {incomingRequestsCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full text-[9px] font-bold w-4 h-4 flex items-center justify-center border border-slate-950 animate-bounce">
+              <span className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full text-[9px] font-bold w-4 h-4 flex items-center justify-center border border-slate-200 dark:border-slate-950 animate-bounce">
                 {incomingRequestsCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* Settings Popover Button */}
-        <div className="relative pb-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setSettingsMenuOpen(!settingsMenuOpen);
-            }}
-            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${settingsMenuOpen ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
-            title="Cài đặt"
-          >
-            <IconSettings size={22} />
-          </button>
-
-          {settingsMenuOpen && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="absolute left-[55px] bottom-2 z-50 bg-slate-900 border border-slate-800/80 rounded-xl shadow-2xl py-1.5 w-56 text-[13px] font-normal text-slate-250 animate-in fade-in slide-in-from-left-2 duration-150 text-left shrink-0"
+        {/* Settings & Logout Column at bottom */}
+        <div className="flex flex-col items-center gap-3.5 pb-2 w-full">
+          {/* Settings Popover Button */}
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setSettingsMenuOpen(!settingsMenuOpen);
+              }}
+              className={`p-2.5 rounded-xl cursor-pointer transition-colors ${
+                settingsMenuOpen 
+                  ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400') 
+                  : (theme === 'light' ? 'text-slate-550 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200')
+              }`}
+              title="Cài đặt"
             >
-              {/* Thông tin tài khoản */}
-              <button
-                onClick={() => {
-                  onOpenProfile();
-                  setSettingsMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer"
+              <IconSettings size={22} />
+            </button>
+
+            {settingsMenuOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute left-[55px] bottom-2 z-50 bg-slate-900 border border-slate-800/80 rounded-xl shadow-2xl py-1.5 w-56 text-[13px] font-normal text-slate-200 animate-in fade-in slide-in-from-left-2 duration-150 text-left shrink-0"
               >
-                <IconUser size={16} className="text-slate-450 text-slate-400" />
-                <span>Thông tin tài khoản</span>
-              </button>
+                {/* Thông tin tài khoản */}
+                <button
+                  onClick={() => {
+                    onOpenProfile();
+                    setSettingsMenuOpen(false);
+                    setSubMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer"
+                >
+                  <IconUser size={16} className="text-slate-400" />
+                  <span>{lang === 'vi' ? 'Thông tin tài khoản' : 'Profile Details'}</span>
+                </button>
 
-              {/* Cài đặt */}
-              <button
-                onClick={() => {
-                  onOpenProfile();
-                  setSettingsMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer"
+                {/* Admin Portal */}
+                {user.role === 'admin' && (
+                  <button
+                    onClick={() => {
+                      onOpenAdmin();
+                      setSettingsMenuOpen(false);
+                      setSubMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-blue-400 font-semibold cursor-pointer"
+                  >
+                    <IconShield size={16} className="text-blue-500 animate-pulse" />
+                    <span>{lang === 'vi' ? 'Quản trị hệ thống' : 'Admin Portal'}</span>
+                  </button>
+                )}
+
+                {/* Cài đặt (Settings sub-menu toggle) */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSubMenuOpen(!subMenuOpen);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer ${subMenuOpen ? 'bg-slate-800' : ''
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <IconSettings size={16} className="text-slate-400" />
+                    <span>{lang === 'vi' ? 'Cài đặt' : 'Settings'}</span>
+                  </div>
+                  <IconChevronRight size={14} className={`text-slate-500 transition-transform ${subMenuOpen ? 'rotate-90' : ''}`} />
+                </button>
+              </div>
+            )}
+
+            {/* Settings Sub-Menu / Dropright */}
+            {settingsMenuOpen && subMenuOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute left-[284px] bottom-14 z-55 bg-slate-900 border border-slate-800/80 rounded-xl shadow-2xl py-1.5 w-48 text-[13px] font-normal text-slate-200 animate-in fade-in slide-in-from-left-2 duration-100 text-left shrink-0"
               >
-                <IconSettings size={16} className="text-slate-450 text-slate-400" />
-                <span>Cài đặt</span>
-              </button>
+                {/* Chế độ Sáng/Tối */}
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer"
+                >
+                  <span>{lang === 'vi' ? 'Giao diện' : 'Appearance'}</span>
+                  <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-400 uppercase font-semibold">
+                    {theme === 'light' ? (lang === 'vi' ? 'Sáng' : 'Light') : (lang === 'vi' ? 'Tối' : 'Dark')}
+                  </span>
+                </button>
 
-              <div className="border-t border-slate-800/80 my-1" />
-
-              {/* Dữ liệu */}
-              <div className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-slate-300 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <IconDatabase size={16} className="text-slate-400" />
-                  <span>Dữ liệu</span>
-                </div>
-                <IconChevronRight size={14} className="text-slate-500" />
+                {/* Ngôn ngữ */}
+                <button
+                  onClick={() => {
+                    toggleLang();
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer"
+                >
+                  <span>{lang === 'vi' ? 'Ngôn ngữ' : 'Language'}</span>
+                  <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-400 uppercase font-semibold">
+                    {lang === 'vi' ? 'Tiếng Việt' : 'English'}
+                  </span>
+                </button>
               </div>
+            )}
+          </div>
 
-              {/* Ngôn ngữ */}
-              <div className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-slate-300 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <IconWorld size={16} className="text-slate-400" />
-                  <span>Ngôn ngữ</span>
-                </div>
-                <IconChevronRight size={14} className="text-slate-500" />
-              </div>
-
-              {/* Hỗ trợ */}
-              <div className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-slate-300 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <IconHelpCircle size={16} className="text-slate-400" />
-                  <span>Hỗ trợ</span>
-                </div>
-                <IconChevronRight size={14} className="text-slate-500" />
-              </div>
-
-              <div className="border-t border-slate-800/80 my-1" />
-
-              {/* Đăng xuất */}
-              <button
-                onClick={() => {
-                  onLogout();
-                  setSettingsMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-rose-500 hover:text-rose-400 font-medium cursor-pointer"
-              >
-                <IconLogout size={16} />
-                <span>Đăng xuất</span>
-              </button>
-            </div>
-          )}
+          {/* Logout Button */}
+          <button
+            onClick={onLogout}
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${
+              theme === 'light' 
+                ? 'text-rose-500 hover:bg-rose-50 hover:text-rose-600' 
+                : 'text-rose-400 hover:bg-rose-500/10 hover:text-rose-300'
+            }`}
+            title={lang === 'vi' ? 'Đăng xuất' : 'Logout'}
+          >
+            <IconLogout size={22} />
+          </button>
         </div>
       </div>
 
@@ -541,27 +591,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Header Search */}
             <div className="h-16 border-b border-slate-800/80 flex items-center px-4 shrink-0">
               <div className="relative w-full">
-                <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-555 text-slate-550 text-slate-500" />
+                <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Tìm kiếm cuộc trò chuyện..."
-                  className="w-full bg-slate-955 bg-slate-950 border border-slate-808 border-slate-800/80 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder={lang === 'vi' ? 'Tìm kiếm cuộc trò chuyện...' : 'Search conversations...'}
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
 
             {/* List Title */}
             <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Cuộc trò chuyện
+              {lang === 'vi' ? 'Cuộc trò chuyện' : 'Conversations'}
             </div>
 
             {/* Conversations List */}
             <div className="flex-1 overflow-y-auto px-2 space-y-1">
               {sortedConversations.length === 0 ? (
                 <p className="text-center text-xs text-slate-500 py-12">
-                  Không có cuộc trò chuyện nào
+                  {lang === 'vi' ? 'Không có cuộc trò chuyện nào' : 'No conversations found'}
                 </p>
               ) : (
                 sortedConversations.map(c => {
@@ -655,13 +705,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="h-16 border-b border-slate-800/80 flex items-center px-4 gap-2 shrink-0">
               <form onSubmit={handleAddFriendSubmit} className="flex gap-2 w-full">
                 <div className="relative flex-1">
-                  <IconSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-505 text-slate-500" />
+                  <IconSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="tel"
                     value={addPhone}
                     onChange={e => setAddPhone(e.target.value)}
-                    placeholder="Nhập số điện thoại cần tìm..."
-                    className="w-full bg-slate-955 bg-slate-950 border border-slate-808 border-slate-800/80 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+                    placeholder={lang === 'vi' ? 'Nhập số điện thoại cần tìm...' : 'Enter phone number to search...'}
+                    className="w-full bg-slate-950 border border-slate-800/80 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
                 <button
@@ -670,7 +720,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="px-3 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 active:scale-95 shrink-0"
                 >
                   <IconSearch size={14} />
-                  <span>Tìm</span>
+                  <span>{lang === 'vi' ? 'Tìm' : 'Search'}</span>
                 </button>
               </form>
             </div>
@@ -700,19 +750,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <h4 className="text-xs font-bold text-slate-200 truncate">
                           {searchedUser.displayName || searchedUser.username}
                           {isMe && (
-                            <span className="ml-1.5 text-[9px] bg-blue-600/30 text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase">Bạn</span>
+                            <span className="ml-1.5 text-[9px] bg-blue-600/30 text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase">{lang === 'vi' ? 'Bạn' : 'You'}</span>
                           )}
                         </h4>
-                        <p className="text-[10px] text-slate-500 mt-0.5">{searchedUser.phone || 'Không có SĐT'}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{searchedUser.phone || (lang === 'vi' ? 'Không có SĐT' : 'No phone')}</p>
                         <p className="text-[9px] text-slate-400 mt-0.5">
-                          Trạng thái: <span className={searchedUser.isOnline ? 'text-green-400' : 'text-slate-400'}>{searchedUser.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</span>
+                          {lang === 'vi' ? 'Trạng thái: ' : 'Status: '} <span className={searchedUser.isOnline ? 'text-green-400' : 'text-slate-400'}>{searchedUser.isOnline ? (lang === 'vi' ? 'Đang hoạt động' : 'Active') : (lang === 'vi' ? 'Ngoại tuyến' : 'Offline')}</span>
                         </p>
                       </div>
                     </div>
 
                     {isMe ? (
                       <div className="text-center text-[10px] text-slate-400 py-1 border-t border-slate-800/60">
-                        Đây là số điện thoại của bạn
+                        {lang === 'vi' ? 'Đây là số điện thoại của bạn' : 'This is your phone number'}
                       </div>
                     ) : (
                       <div className="flex gap-2">
@@ -721,7 +771,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
                         >
                           <IconMessageCircle2 size={13} />
-                          <span>Nhắn tin</span>
+                          <span>{lang === 'vi' ? 'Nhắn tin' : 'Message'}</span>
                         </button>
 
                         {!isFriend && (
@@ -730,7 +780,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
                           >
                             <IconUserPlus size={13} />
-                            <span>Kết bạn</span>
+                            <span>{lang === 'vi' ? 'Kết bạn' : 'Add Friend'}</span>
                           </button>
                         )}
 
@@ -738,7 +788,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           onClick={handleToggleBlockFromCard}
                           className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 ${isSearchedUserBlocked ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white'}`}
                         >
-                          <span>{isSearchedUserBlocked ? 'Bỏ chặn' : 'Chặn'}</span>
+                          <span>{isSearchedUserBlocked ? (lang === 'vi' ? 'Bỏ chặn' : 'Unblock') : (lang === 'vi' ? 'Chặn' : 'Block')}</span>
                         </button>
                       </div>
                     )}
@@ -748,40 +798,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* Sub-tabs buttons */}
-            <div className="flex border-b border-slate-850 px-2 py-1 gap-1 bg-slate-900/40 shrink-0">
+            <div className="flex justify-center border-b border-slate-200/50 dark:border-slate-800/80 px-4 bg-transparent shrink-0 gap-8">
               <button
                 onClick={() => setFriendsSubTab('list')}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${friendsSubTab === 'list' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-855 hover:bg-slate-850 hover:text-slate-300'}`}
+                className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 ${friendsSubTab === 'list'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
               >
-                Bạn bè ({friendsList.length})
+                {lang === 'vi' ? 'Bạn bè' : 'Friends'} ({friendsList.length})
               </button>
               <button
                 onClick={() => setFriendsSubTab('incoming')}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all relative ${friendsSubTab === 'incoming' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-855 hover:bg-slate-850 hover:text-slate-300'}`}
+                className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 relative ${friendsSubTab === 'incoming'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
               >
-                Lời mời ({incomingRequests.length})
+                {lang === 'vi' ? 'Lời mời' : 'Requests'} ({incomingRequests.length})
                 {incomingRequests.length > 0 && (
-                  <span className="absolute top-1 right-2 w-2 h-2 bg-rose-500 rounded-full" />
+                  <span className="absolute top-2.5 -right-2 w-1.5 h-1.5 bg-rose-500 rounded-full" />
                 )}
               </button>
               <button
                 onClick={() => setFriendsSubTab('outgoing')}
-                className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${friendsSubTab === 'outgoing' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-855 hover:bg-slate-850 hover:text-slate-300'}`}
+                className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 ${friendsSubTab === 'outgoing'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
               >
-                Đã gửi ({outgoingRequests.length})
+                {lang === 'vi' ? 'Đã gửi' : 'Sent'} ({outgoingRequests.length})
               </button>
             </div>
 
             {/* List panel */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-0">
               {loadingFriends ? (
-                <p className="text-center text-xs text-slate-500 py-12">Đang tải...</p>
+                <p className="text-center text-xs text-slate-500 py-12">{lang === 'vi' ? 'Đang tải...' : 'Loading...'}</p>
               ) : (
                 <>
                   {/* Friends List */}
                   {friendsSubTab === 'list' && (
                     friendsList.length === 0 ? (
-                      <p className="text-center text-xs text-slate-500 py-12">Chưa có bạn bè nào. Hãy kết bạn bằng số điện thoại ở trên!</p>
+                      <p className="text-center text-xs text-slate-500 py-12">
+                        {lang === 'vi'
+                          ? 'Chưa có bạn bè nào. Hãy kết bạn bằng số điện thoại ở trên!'
+                          : 'No friends yet. Add friends using the phone number search above!'}
+                      </p>
                     ) : (
                       friendsList.map(friend => {
                         const isOnline = friend.isOnline;
@@ -801,7 +864,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               <div className="min-w-0">
                                 <p className="text-xs font-bold text-slate-200 truncate">{friend.displayName || friend.username}</p>
                                 <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                                  {isOnline ? 'Đang hoạt động' : formatLastActive(friend.lastActiveAt)}
+                                  {isOnline ? (lang === 'vi' ? 'Đang hoạt động' : 'Active') : formatLastActive(friend.lastActiveAt)}
                                 </p>
                               </div>
                             </div>
@@ -810,14 +873,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               <button
                                 onClick={() => onStartDirectChat(friend._id)}
                                 className="p-1.5 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-                                title="Nhắn tin"
+                                title={lang === 'vi' ? 'Nhắn tin' : 'Message'}
                               >
                                 <IconMessageCircle2 size={14} />
                               </button>
                               <button
                                 onClick={() => handleRemoveFriend(friend._id)}
                                 className="p-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-                                title="Hủy kết bạn"
+                                title={lang === 'vi' ? 'Hủy kết bạn' : 'Unfriend'}
                               >
                                 <IconUserMinus size={14} />
                               </button>
@@ -831,7 +894,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {/* Incoming Requests */}
                   {friendsSubTab === 'incoming' && (
                     incomingRequests.length === 0 ? (
-                      <p className="text-center text-xs text-slate-500 py-12">Không có lời mời kết bạn nào cần duyệt</p>
+                      <p className="text-center text-xs text-slate-500 py-12">
+                        {lang === 'vi' ? 'Không có lời mời kết bạn nào cần duyệt' : 'No incoming friend requests'}
+                      </p>
                     ) : (
                       incomingRequests.map(req => {
                         const sender = req.senderId;
@@ -848,7 +913,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               </div>
                               <div className="min-w-0">
                                 <p className="text-xs font-bold text-slate-200 truncate">{sender.displayName || sender.username}</p>
-                                <p className="text-[9px] text-slate-500 truncate mt-0.5">Muốn kết bạn với bạn</p>
+                                <p className="text-[9px] text-slate-500 truncate mt-0.5">
+                                  {lang === 'vi' ? 'Muốn kết bạn với bạn' : 'Wants to be friends'}
+                                </p>
                               </div>
                             </div>
 
@@ -856,14 +923,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               <button
                                 onClick={() => handleAcceptRequest(req._id)}
                                 className="p-1.5 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-                                title="Đồng ý"
+                                title={lang === 'vi' ? 'Đồng ý' : 'Accept'}
                               >
                                 <IconCheck size={14} />
                               </button>
                               <button
                                 onClick={() => handleDeclineRequest(req._id)}
                                 className="p-1.5 bg-rose-500/15 hover:bg-rose-550 hover:bg-rose-500 text-rose-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-                                title="Từ chối"
+                                title={lang === 'vi' ? 'Từ chối' : 'Decline'}
                               >
                                 <IconX size={14} />
                               </button>
@@ -877,7 +944,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {/* Outgoing Requests */}
                   {friendsSubTab === 'outgoing' && (
                     outgoingRequests.length === 0 ? (
-                      <p className="text-center text-xs text-slate-500 py-12">Không có yêu cầu kết bạn nào đang chờ duyệt</p>
+                      <p className="text-center text-xs text-slate-500 py-12">
+                        {lang === 'vi' ? 'Không có yêu cầu kết bạn nào đang chờ duyệt' : 'No pending outgoing requests'}
+                      </p>
                     ) : (
                       outgoingRequests.map(req => {
                         const receiver = req.receiverId;
@@ -894,16 +963,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               </div>
                               <div className="min-w-0">
                                 <p className="text-xs font-bold text-slate-200 truncate">{receiver.displayName || receiver.username}</p>
-                                <p className="text-[9px] text-slate-500 truncate mt-0.5">Đang chờ đối phương chấp nhận</p>
+                                <p className="text-[9px] text-slate-500 truncate mt-0.5">
+                                  {lang === 'vi' ? 'Đang chờ đối phương chấp nhận' : 'Waiting for approval'}
+                                </p>
                               </div>
                             </div>
 
                             <button
                               onClick={() => handleCancelRequest(req._id)}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-rose-400 border border-slate-750 border-slate-800/80 rounded-lg text-[10px] font-bold transition-all cursor-pointer shrink-0"
-                              title="Thu hồi yêu cầu kết bạn"
+                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-400 hover:text-rose-400 border border-slate-850 rounded-lg text-[10px] font-bold transition-all cursor-pointer shrink-0"
+                              title={lang === 'vi' ? 'Thu hồi yêu cầu kết bạn' : 'Cancel request'}
                             >
-                              Thu hồi
+                              {lang === 'vi' ? 'Thu hồi' : 'Cancel'}
                             </button>
                           </div>
                         );
@@ -937,8 +1008,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <IconPin size={14} className="text-slate-400 rotate-45" />
             <span>
               {getParticipantInfo(conversations.find(c => c._id === activeMenuId))?.isPinned
-                ? 'Bỏ ghim cuộc trò chuyện'
-                : 'Ghim cuộc trò chuyện'}
+                ? (lang === 'vi' ? 'Bỏ ghim cuộc trò chuyện' : 'Unpin conversation')
+                : (lang === 'vi' ? 'Ghim cuộc trò chuyện' : 'Pin conversation')}
             </span>
           </button>
 
@@ -950,7 +1021,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="w-full text-left px-3 py-2 hover:bg-slate-850 hover:text-rose-400 text-rose-500 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-800/60 mt-1 pt-2 animate-fade-in"
           >
             <IconTrash size={14} />
-            <span>Xóa lịch sử trò chuyện</span>
+            <span>{lang === 'vi' ? 'Xóa lịch sử trò chuyện' : 'Delete chat history'}</span>
           </button>
         </div>
       )}

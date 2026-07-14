@@ -21,6 +21,7 @@ interface ChatAreaProps {
   incomingRequests: any[];
   outgoingRequests: any[];
   onFriendStatusChange: () => void;
+  lang: 'vi' | 'en';
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
@@ -38,6 +39,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   incomingRequests,
   outgoingRequests,
   onFriendStatusChange,
+  lang,
 }) => {
   const [inputText, setInputText] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -604,17 +606,17 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                     {m.parentId && (
                       <div className={`p-2 rounded-lg text-xs mb-2 border shrink-0 max-w-full ${isOwn ? 'bg-blue-700/40 border-blue-600/40 text-blue-100' : 'bg-slate-900/60 border-slate-800/80 text-slate-400'}`}>
                         <p className="font-bold mb-0.5 truncate">
-                          {m.parentId.senderId?._id === (user._id || user.id) ? 'You' : m.parentId.senderId?.displayName || 'User'}
+                          {m.parentId.senderId?._id === (user._id || user.id) ? (lang === 'vi' ? 'Bạn' : 'You') : m.parentId.senderId?.displayName || 'User'}
                         </p>
                         <p className="truncate">
-                          {m.parentId.isRevoked ? 'Message revoked' : m.parentId.content || '[File / Media]'}
+                          {m.parentId.isRevoked ? (lang === 'vi' ? 'Tin nhắn đã thu hồi' : 'Message revoked') : m.parentId.content || '[File / Media]'}
                         </p>
                       </div>
                     )}
 
                     {/* Main Message Body */}
                     {m.isRevoked ? (
-                      <span>Message was revoked</span>
+                      <span>{lang === 'vi' ? 'Tin nhắn đã thu hồi' : 'Message was revoked'}</span>
                     ) : (
                       <>
                         {m.type === 'text' && <span>{m.content}</span>}
@@ -641,9 +643,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                     {isOwn && !m.isRevoked && (
                       <span className="text-[9px] shrink-0 font-semibold tracking-wider uppercase">
                         {isSeen(m) ? (
-                          <span className="text-blue-450 text-blue-400" title={getSeenTooltip(m)}>• Đã xem</span>
+                          <span className="text-blue-400" title={getSeenTooltip(m)}>{lang === 'vi' ? '• Đã xem' : '• Read'}</span>
                         ) : (
-                          <span className="text-slate-500">• Đã gửi</span>
+                          <span className="text-slate-500">{lang === 'vi' ? '• Đã gửi' : '• Sent'}</span>
                         )}
                       </span>
                     )}
@@ -660,9 +662,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       {replyToMessage && (
         <div className="px-6 py-2 border-t border-slate-850 bg-slate-900/40 flex items-center justify-between text-xs text-slate-400 shrink-0">
           <div className="flex items-center gap-2 truncate">
-            <span className="text-blue-400 font-semibold shrink-0">Replying to:</span>
+            <span className="text-blue-400 font-semibold shrink-0">{lang === 'vi' ? 'Đang trả lời:' : 'Replying to:'}</span>
             <span className="truncate italic">
-              "{replyToMessage.content || '[Media file]'}"
+              "{replyToMessage.content || (lang === 'vi' ? '[Tệp tin / Media]' : '[File / Media]')}"
             </span>
           </div>
           <button
@@ -700,7 +702,13 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
               handleSend();
             }
           }}
-          placeholder={uploading ? 'Đang tải tệp đính kèm lên...' : recording ? 'Đang ghi âm cuộc gọi thoại...' : 'Nhập tin nhắn...'}
+          placeholder={
+            uploading 
+              ? (lang === 'vi' ? 'Đang tải tệp đính kèm lên...' : 'Uploading attachment...') 
+              : recording 
+                ? (lang === 'vi' ? 'Đang ghi âm thoại...' : 'Recording voice...') 
+                : (lang === 'vi' ? 'Nhập tin nhắn...' : 'Type a message...')
+          }
           className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
         />
 
@@ -712,7 +720,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             <button
               onClick={stopRecording}
               className="p-1 hover:bg-rose-500/20 text-rose-400 rounded-lg cursor-pointer"
-              title="Dừng và Gửi"
+              title={lang === 'vi' ? 'Dừng và Gửi' : 'Stop and Send'}
             >
               <IconX size={16} />
             </button>
@@ -722,7 +730,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             onClick={startRecording}
             disabled={uploading}
             className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-blue-400 cursor-pointer transition-colors shrink-0"
-            title="Ghi âm thoại"
+            title={lang === 'vi' ? 'Ghi âm thoại' : 'Record voice'}
           >
             <IconMicrophone size={20} />
           </button>

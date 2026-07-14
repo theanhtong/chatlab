@@ -6,6 +6,7 @@ interface ProfileModalProps {
   token: string;
   onClose: () => void;
   onProfileUpdated: (updatedUser: any) => void;
+  lang: 'vi' | 'en';
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -13,6 +14,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   token,
   onClose,
   onProfileUpdated,
+  lang,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState(user.displayName || '');
@@ -230,51 +232,53 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
           </div>
 
-          <div className="border-t-[8px] border-slate-950/40 w-full" />
+          <div className="h-4" />
 
           {/* Details Form / View */}
           <div className="p-5">
             {!isEditing ? (
               /* VIEW MODE */
               <div className="space-y-5">
-                <h4 className="text-sm font-bold text-slate-200 tracking-wide">Thông tin cá nhân</h4>
+                <h4 className="text-sm font-bold text-slate-200 tracking-wide">{lang === 'vi' ? 'Thông tin cá nhân' : 'Profile Information'}</h4>
                 
                 <div className="space-y-3.5 text-[13px]">
                   <div className="flex items-center text-slate-350">
-                    <div className="w-[100px] text-slate-450 flex items-center gap-2 text-slate-400">
+                    <div className="w-[100px] text-slate-405 flex items-center gap-2 text-slate-400">
                       <IconUser size={15} />
-                      <span>Giới tính</span>
+                      <span>{lang === 'vi' ? 'Giới tính' : 'Gender'}</span>
                     </div>
-                    <span className="text-slate-200 font-medium">{gender}</span>
+                    <span className="text-slate-200 font-medium">
+                      {gender === 'Nam' ? (lang === 'vi' ? 'Nam' : 'Male') : gender === 'Nữ' ? (lang === 'vi' ? 'Nữ' : 'Female') : (lang === 'vi' ? 'Khác' : 'Other')}
+                    </span>
                   </div>
 
                   <div className="flex items-center text-slate-350">
-                    <div className="w-[100px] text-slate-450 flex items-center gap-2 text-slate-400">
+                    <div className="w-[100px] text-slate-405 flex items-center gap-2 text-slate-400">
                       <IconCalendar size={15} />
-                      <span>Ngày sinh</span>
+                      <span>{lang === 'vi' ? 'Ngày sinh' : 'Date of birth'}</span>
                     </div>
                     <span className="text-slate-200 font-medium">{birthDate}</span>
                   </div>
 
                   <div className="flex items-center text-slate-350">
-                    <div className="w-[100px] text-slate-450 flex items-center gap-2 text-slate-400">
+                    <div className="w-[100px] text-slate-405 flex items-center gap-2 text-slate-400">
                       <IconPhone size={15} />
-                      <span>Điện thoại</span>
+                      <span>{lang === 'vi' ? 'Điện thoại' : 'Phone'}</span>
                     </div>
-                    <span className="text-slate-200 font-medium">{user.phone || 'Không công khai'}</span>
+                    <span className="text-slate-200 font-medium">{user.phone || (lang === 'vi' ? 'Không công khai' : 'Private')}</span>
                   </div>
 
                   <div className="flex items-start text-slate-350">
-                    <div className="w-[100px] text-slate-450 flex items-center gap-2 text-slate-400 shrink-0">
+                    <div className="w-[100px] text-slate-405 flex items-center gap-2 text-slate-400 shrink-0">
                       <IconNotebook size={15} />
-                      <span>Tiểu sử</span>
+                      <span>{lang === 'vi' ? 'Tiểu sử' : 'Bio'}</span>
                     </div>
-                    <span className="text-slate-200 break-words flex-1 font-medium">{bio || 'Chưa cập nhật tiểu sử.'}</span>
+                    <span className="text-slate-200 break-words flex-1 font-medium">{bio || (lang === 'vi' ? 'Chưa cập nhật tiểu sử.' : 'No bio updated.')}</span>
                   </div>
                 </div>
 
                 <p className="text-[11px] text-slate-500 italic mt-4 select-none">
-                  Chỉ bạn bè có lưu số của bạn trong danh bạ máy xem được số này
+                  {lang === 'vi' ? 'Chỉ bạn bè có lưu số của bạn trong danh bạ máy xem được số này' : 'Only friends with your number in their contacts can see this'}
                 </p>
 
                 <div className="pt-2">
@@ -283,18 +287,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     className="w-full py-2.5 bg-slate-800 hover:bg-slate-750 text-blue-400 font-bold rounded-xl text-[13px] transition-colors cursor-pointer flex items-center justify-center gap-2 border border-slate-750"
                   >
                     <IconPencil size={15} />
-                    <span>Cập nhật</span>
+                    <span>{lang === 'vi' ? 'Cập nhật' : 'Update Info'}</span>
                   </button>
                 </div>
               </div>
             ) : (
               /* EDIT MODE */
               <form onSubmit={handleUpdate} className="space-y-4">
-                <h4 className="text-sm font-bold text-slate-200 tracking-wide mb-3">Chỉnh sửa thông tin</h4>
+                <h4 className="text-sm font-bold text-slate-200 tracking-wide mb-3">{lang === 'vi' ? 'Chỉnh sửa thông tin' : 'Edit Information'}</h4>
 
                 <div className="space-y-3.5">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tên hiển thị</label>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">{lang === 'vi' ? 'Tên hiển thị' : 'Display Name'}</label>
                     <input
                       type="text"
                       required
@@ -306,20 +310,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Giới tính</label>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">{lang === 'vi' ? 'Giới tính' : 'Gender'}</label>
                       <select
                         value={gender}
                         onChange={e => setGender(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
                       >
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
-                        <option value="Khác">Khác</option>
+                        <option value="Nam">{lang === 'vi' ? 'Nam' : 'Male'}</option>
+                        <option value="Nữ">{lang === 'vi' ? 'Nữ' : 'Female'}</option>
+                        <option value="Khác">{lang === 'vi' ? 'Khác' : 'Other'}</option>
                       </select>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ngày sinh</label>
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">{lang === 'vi' ? 'Ngày sinh' : 'Date of birth'}</label>
                       <input
                         type="text"
                         placeholder="DD/MM/YYYY"
@@ -331,12 +335,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Tiểu sử</label>
+                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">{lang === 'vi' ? 'Tiểu sử' : 'Biography'}</label>
                     <textarea
                       value={bio}
                       onChange={e => setBio(e.target.value)}
                       rows={2}
-                      placeholder="Viết vài câu tự giới thiệu..."
+                      placeholder={lang === 'vi' ? 'Viết vài câu tự giới thiệu...' : 'Write a short bio...'}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                     />
                   </div>
@@ -357,14 +361,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     }}
                     className="flex-1 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs transition-colors cursor-pointer"
                   >
-                    Hủy
+                    {lang === 'vi' ? 'Hủy' : 'Cancel'}
                   </button>
                   <button
                     type="submit"
                     disabled={loading || uploadingAvatar || uploadingCover}
                     className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 font-bold text-white rounded-xl text-xs transition-colors cursor-pointer"
                   >
-                    {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                    {loading ? (lang === 'vi' ? 'Đang lưu...' : 'Saving...') : (lang === 'vi' ? 'Lưu thay đổi' : 'Save changes')}
                   </button>
                 </div>
               </form>

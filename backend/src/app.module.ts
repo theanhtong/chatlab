@@ -14,6 +14,7 @@ import { MessageReceiptsModule } from './message-receipts/message-receipts.modul
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { UploadsModule } from './uploads/uploads.module';
     AuthModule,
     ChatModule,
     UploadsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

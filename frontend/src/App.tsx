@@ -4,6 +4,7 @@ import { ChatArea } from './components/ChatArea';
 import { ContextMenu } from './components/ContextMenu';
 import { ShareModal } from './components/ShareModal';
 import { ProfileModal } from './components/ProfileModal';
+import { AdminDashboard } from './components/AdminDashboard';
 import { useChatManager } from './hooks/useChatManager';
 
 function App() {
@@ -28,6 +29,8 @@ function App() {
     setIncomingRequestsCount,
     profileOpen,
     setProfileOpen,
+    adminOpen,
+    setAdminOpen,
     replyToMessage,
     setReplyToMessage,
     shareTargetMessage,
@@ -47,14 +50,38 @@ function App() {
     fetchFriendsList,
     fetchFriendRequests,
     isFriendOfConvo,
+    theme,
+    toggleTheme,
+    lang,
+    toggleLang,
   } = useChatManager();
 
   if (!token || !user) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
+    return (
+      <Login
+        onLoginSuccess={handleLoginSuccess}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        lang={lang}
+        toggleLang={toggleLang}
+      />
+    );
+  }
+
+  if (adminOpen) {
+    return (
+      <AdminDashboard
+        token={token}
+        onClose={() => setAdminOpen(false)}
+        lang={lang}
+        theme={theme}
+        currentUser={user}
+      />
+    );
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-955 bg-slate-950 text-slate-100 font-sans select-none">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
 
       {/* Sidebar Navigation & Chat list */}
       <Sidebar
@@ -78,6 +105,11 @@ function App() {
         setIncomingRequests={setIncomingRequests}
         outgoingRequests={outgoingRequests}
         setOutgoingRequests={setOutgoingRequests}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        lang={lang}
+        toggleLang={toggleLang}
+        onOpenAdmin={() => setAdminOpen(true)}
       />
 
       {/* Active Conversation Main Area */}
@@ -104,10 +136,15 @@ function App() {
             fetchFriendRequests(token);
             fetchConversations(token);
           }}
+          lang={lang}
         />
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center text-slate-500 bg-slate-955 bg-slate-950">
-          <p className="text-base font-medium">Select a conversation or check friends to start chatting</p>
+        <div className="flex-1 flex flex-col items-center justify-center text-slate-505 text-slate-500 bg-slate-950">
+          <p className="text-sm font-medium text-slate-400">
+            {lang === 'vi' 
+              ? 'Chọn một cuộc trò chuyện hoặc kiểm tra danh bạ để bắt đầu nhắn tin' 
+              : 'Select a conversation or check friends to start chatting'}
+          </p>
         </div>
       )}
 
@@ -142,6 +179,7 @@ function App() {
           token={token}
           onClose={() => setProfileOpen(false)}
           onProfileUpdated={setUser}
+          lang={lang}
         />
       )}
 
