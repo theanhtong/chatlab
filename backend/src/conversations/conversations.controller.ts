@@ -96,4 +96,12 @@ export class ConversationsController {
     return this.conversationsService.togglePin(conversationId, userId, pin);
   }
 
+  @Delete(':id')
+  async deleteConversation(
+    @Req() req: any,
+    @Param('id') conversationId: string,
+  ) {
+    const userId = req.user.sub;
+    return this.conversationsService.deleteConversationForUser(conversationId, userId);
+  }
 }

@@ -315,7 +315,18 @@ export class ConversationsService {
         })
         .exec();
 
-      if (!lastMsg) {
+      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+      const clearHistoryAt = participant?.clearHistoryAt ? new Date(participant.clearHistoryAt) : null;
+
+      let effectiveLastMsg = lastMsg;
+      if (lastMsg && clearHistoryAt && new Date(lastMsg.createdAt) <= clearHistoryAt) {
+        effectiveLastMsg = null;
+      }
+
+      if (!effectiveLastMsg) {
+        if (clearHistoryAt) {
+          continue; // Hide conversation if cleared explicitly
+        }
         if (c.type === ConversationType.DIRECT) {
           const other = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
           const otherId = other?.userId ? (other.userId as any)._id.toString() : null;
@@ -326,7 +337,7 @@ export class ConversationsService {
       }
 
       const cObj = c.toObject() as any;
-      cObj.lastMessage = lastMsg ? lastMsg.toObject() : null;
+      cObj.lastMessage = effectiveLastMsg ? effectiveLastMsg.toObject() : null;
       processed.push(cObj);
     }
 
@@ -416,7 +427,18 @@ export class ConversationsService {
         })
         .exec();
 
-      if (!lastMsg) {
+      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+      const clearHistoryAt = participant?.clearHistoryAt ? new Date(participant.clearHistoryAt) : null;
+
+      let effectiveLastMsg = lastMsg;
+      if (lastMsg && clearHistoryAt && new Date(lastMsg.createdAt) <= clearHistoryAt) {
+        effectiveLastMsg = null;
+      }
+
+      if (!effectiveLastMsg) {
+        if (clearHistoryAt) {
+          continue; // Hide conversation if cleared explicitly
+        }
         if (c.type === ConversationType.DIRECT) {
           const other = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
           const otherId = other?.userId ? (other.userId as any)._id.toString() : null;
@@ -427,7 +449,7 @@ export class ConversationsService {
       }
 
       const cObj = c.toObject() as any;
-      cObj.lastMessage = lastMsg ? lastMsg.toObject() : null;
+      cObj.lastMessage = effectiveLastMsg ? effectiveLastMsg.toObject() : null;
       processed.push(cObj);
     }
 
@@ -484,5 +506,20 @@ export class ConversationsService {
     });
   }
 
+  async deleteConversationForUser(conversationId: string, userId: string): Promise<any> {
+    const conversation = await this.conversationModel.findById(new Types.ObjectId(conversationId)).exec();
+    if (!conversation) {
+      throw new NotFoundException('Conversation not found');
+    }
 
+    const participant = conversation.participants.find(p => p.userId.toString() === userId);
+    if (!participant) {
+      throw new ForbiddenException('You are not a participant in this conversation');
+    }
+
+    participant.clearHistoryAt = new Date();
+    await conversation.save();
+
+    return { success: true, message: 'Conversation history cleared successfully' };
+  }
 }

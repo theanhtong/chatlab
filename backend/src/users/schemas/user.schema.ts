@@ -20,6 +20,15 @@ export class User {
   @Prop({ default: '' })
   bio: string;
 
+  @Prop({ default: '' })
+  coverImage: string;
+
+  @Prop({ default: 'Nam' })
+  gender: string;
+
+  @Prop({ default: '09/04/2005' })
+  birthDate: string;
+
   @Prop({ required: true, unique: true, trim: true })
   phone: string;
 

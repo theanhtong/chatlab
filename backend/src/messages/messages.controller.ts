@@ -46,7 +46,7 @@ export class MessagesController {
       throw new ForbiddenException('You are not a participant in this conversation');
     }
 
-    return this.messagesService.getMessageHistory(conversationId, limit ? +limit : 50, before);
+    return this.messagesService.getMessageHistory(conversationId, limit ? +limit : 50, before, userId);
   }
 
   @Post(':id/revoke')
@@ -69,7 +69,7 @@ export class MessagesController {
     if (!isParticipant) {
       throw new ForbiddenException('You are not a participant in this conversation');
     }
-    return this.messagesService.getPinnedMessages(conversationId);
+    return this.messagesService.getPinnedMessages(conversationId, userId);
   }
 
   @Patch(':id/pin')

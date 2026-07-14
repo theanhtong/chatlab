@@ -14,7 +14,6 @@ interface ChatAreaProps {
   onSendMessage: (content: string | null, parentId?: string, attachments?: string[], type?: string) => void;
   onContextMenu: (e: React.MouseEvent, message: any) => void;
   token: string;
-  onTogglePinConversation: (cId: string, pin: boolean) => void;
   onTogglePinMessage: (messageId: string, pin: boolean) => void;
   replyToMessage: any | null;
   onClearReply: () => void;
@@ -32,7 +31,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onSendMessage,
   onContextMenu,
   token,
-  onTogglePinConversation,
   onTogglePinMessage,
   replyToMessage,
   onClearReply,
@@ -199,12 +197,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   };
 
   const details = getChatHeaderDetails();
-  const myParticipant = activeConversation.participants.find((p: any) => {
-    const pId = p.userId?._id || p.userId;
-    const myId = user._id || user.id;
-    return pId === myId;
-  });
-  const isPinned = myParticipant?.isPinned;
+
+
 
   const isDirectChat = activeConversation.type === 'direct';
   const otherParticipant = isDirectChat
@@ -326,16 +320,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Toggle Pin Conversation */}
-          {isFriend && (
-            <button
-              onClick={() => onTogglePinConversation(activeConversation._id, !isPinned)}
-              className={`p-2 rounded-xl cursor-pointer transition-colors ${isPinned ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-slate-800 text-slate-400'}`}
-              title={isPinned ? 'Hủy ghim trò chuyện' : 'Ghim trò chuyện'}
-            >
-              <IconPin size={18} />
-            </button>
-          )}
+          {/* Options menu or actions can be added here if needed */}
         </div>
       </div>
 

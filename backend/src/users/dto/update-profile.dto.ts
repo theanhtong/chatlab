@@ -14,4 +14,16 @@ export class UpdateProfileDto {
   @IsString()
   @Length(0, 160)
   bio?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImage?: string;
+
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  birthDate?: string;
 }

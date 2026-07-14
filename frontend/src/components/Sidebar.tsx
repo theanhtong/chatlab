@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  IconMessage, IconLogout, IconSettings, IconSearch, 
+import {
+  IconMessage, IconLogout, IconSettings, IconSearch,
   IconPin, IconDotsVertical, IconUsers, IconUserPlus,
-  IconCheck, IconX, IconUserMinus, IconMessageCircle2
+  IconCheck, IconX, IconUserMinus, IconMessageCircle2,
+  IconUser, IconDatabase, IconChevronRight, IconWorld,
+  IconHelpCircle, IconTrash
 } from '@tabler/icons-react';
 
 interface SidebarProps {
@@ -13,6 +15,7 @@ interface SidebarProps {
   onOpenProfile: () => void;
   onLogout: () => void;
   onTogglePin: (cId: string, pin: boolean) => void;
+  onDeleteConversation: (cId: string) => void;
   activeTab: 'chats' | 'friends';
   setActiveTab: (tab: 'chats' | 'friends') => void;
   incomingRequestsCount: number;
@@ -35,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfile,
   onLogout,
   onTogglePin,
+  onDeleteConversation,
   activeTab,
   setActiveTab,
   incomingRequestsCount,
@@ -51,6 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [search, setSearch] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null);
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 
   // Friends Pane local states
   const [friendsSubTab, setFriendsSubTab] = useState<'list' | 'incoming' | 'outgoing'>('list');
@@ -65,7 +70,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isFriend, setIsFriend] = useState(false);
 
   useEffect(() => {
-    const handleCloseMenu = () => setActiveMenuId(null);
+    const handleCloseMenu = () => {
+      setActiveMenuId(null);
+      setSettingsMenuOpen(false);
+    };
     window.addEventListener('click', handleCloseMenu);
     return () => window.removeEventListener('click', handleCloseMenu);
   }, []);
@@ -392,12 +400,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className="w-[380px] bg-slate-900 border-r border-slate-800 flex h-full text-slate-100 select-none">
-      
+
       {/* 1. Left Narrow Bar */}
       <div className="w-[70px] bg-slate-955 bg-slate-950 border-r border-slate-909/60 border-slate-900/60 flex flex-col items-center py-6 justify-between shrink-0">
         <div className="flex flex-col items-center gap-6 w-full animate-fade-in">
           {/* User Profile Avatar */}
-          <button 
+          <button
             onClick={onOpenProfile}
             className="w-11 h-11 rounded-full bg-blue-600 border border-blue-500/35 overflow-hidden flex items-center justify-center font-bold text-sm cursor-pointer hover:opacity-90 relative group transition-all duration-300"
           >
@@ -406,9 +414,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ) : (
               <span>{user.displayName ? user.displayName.slice(0, 2).toUpperCase() : 'ME'}</span>
             )}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
-              <IconSettings size={16} className="text-white" />
-            </div>
           </button>
 
           {/* Chats Icon Tab */}
@@ -438,42 +443,111 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Settings and Logout */}
-        <div className="flex flex-col items-center gap-2">
+        {/* Settings Popover Button */}
+        <div className="relative pb-2">
           <button
-            onClick={onOpenProfile}
-            className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-900 hover:text-slate-200 cursor-pointer transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSettingsMenuOpen(!settingsMenuOpen);
+            }}
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${settingsMenuOpen ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
             title="Cài đặt"
           >
             <IconSettings size={22} />
           </button>
 
-          <button
-            onClick={onLogout}
-            className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-900 hover:text-rose-400 cursor-pointer transition-colors"
-            title="Đăng xuất"
-          >
-            <IconLogout size={22} />
-          </button>
+          {settingsMenuOpen && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute left-[55px] bottom-2 z-50 bg-slate-900 border border-slate-800/80 rounded-xl shadow-2xl py-1.5 w-56 text-[13px] font-normal text-slate-250 animate-in fade-in slide-in-from-left-2 duration-150 text-left shrink-0"
+            >
+              {/* Thông tin tài khoản */}
+              <button
+                onClick={() => {
+                  onOpenProfile();
+                  setSettingsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer"
+              >
+                <IconUser size={16} className="text-slate-450 text-slate-400" />
+                <span>Thông tin tài khoản</span>
+              </button>
+
+              {/* Cài đặt */}
+              <button
+                onClick={() => {
+                  onOpenProfile();
+                  setSettingsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-slate-200 cursor-pointer"
+              >
+                <IconSettings size={16} className="text-slate-450 text-slate-400" />
+                <span>Cài đặt</span>
+              </button>
+
+              <div className="border-t border-slate-800/80 my-1" />
+
+              {/* Dữ liệu */}
+              <div className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-slate-300 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <IconDatabase size={16} className="text-slate-400" />
+                  <span>Dữ liệu</span>
+                </div>
+                <IconChevronRight size={14} className="text-slate-500" />
+              </div>
+
+              {/* Ngôn ngữ */}
+              <div className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-slate-300 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <IconWorld size={16} className="text-slate-400" />
+                  <span>Ngôn ngữ</span>
+                </div>
+                <IconChevronRight size={14} className="text-slate-500" />
+              </div>
+
+              {/* Hỗ trợ */}
+              <div className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-800 transition-colors text-slate-300 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <IconHelpCircle size={16} className="text-slate-400" />
+                  <span>Hỗ trợ</span>
+                </div>
+                <IconChevronRight size={14} className="text-slate-500" />
+              </div>
+
+              <div className="border-t border-slate-800/80 my-1" />
+
+              {/* Đăng xuất */}
+              <button
+                onClick={() => {
+                  onLogout();
+                  setSettingsMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800 transition-colors text-left text-rose-500 hover:text-rose-400 font-medium cursor-pointer"
+              >
+                <IconLogout size={16} />
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* 2. Right Content Pane */}
       <div className="flex-1 flex flex-col min-w-0">
-        
+
         {/* CHATS TAB PANELS */}
         {activeTab === 'chats' && (
           <>
             {/* Header Search */}
-            <div className="p-4 border-b border-slate-800/80">
-              <div className="relative">
-                <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-555 text-slate-500" />
+            <div className="h-16 border-b border-slate-800/80 flex items-center px-4 shrink-0">
+              <div className="relative w-full">
+                <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-555 text-slate-550 text-slate-500" />
                 <input
                   type="text"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   placeholder="Tìm kiếm cuộc trò chuyện..."
-                  className="w-full bg-slate-955 bg-slate-950 border border-slate-808 border-slate-800/80 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-slate-955 bg-slate-950 border border-slate-808 border-slate-800/80 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
@@ -493,7 +567,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 sortedConversations.map(c => {
                   const details = getConversationDetails(c);
                   const isActive = activeConversation && activeConversation._id === c._id;
-                  
+
                   const part = getParticipantInfo(c);
                   const isPinned = part?.isPinned;
 
@@ -578,17 +652,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {activeTab === 'friends' && (
           <div className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-right-3 duration-200">
             {/* Header: Add Friend search */}
-            <div className="p-4 border-b border-slate-800/80 space-y-3 shrink-0">
-              <h3 className="text-sm font-bold text-slate-200">Tìm kiếm bạn bè</h3>
-              <form onSubmit={handleAddFriendSubmit} className="flex gap-2">
+            <div className="h-16 border-b border-slate-800/80 flex items-center px-4 gap-2 shrink-0">
+              <form onSubmit={handleAddFriendSubmit} className="flex gap-2 w-full">
                 <div className="relative flex-1">
-                  <IconSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <IconSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-505 text-slate-500" />
                   <input
                     type="tel"
                     value={addPhone}
                     onChange={e => setAddPhone(e.target.value)}
                     placeholder="Nhập số điện thoại cần tìm..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-slate-955 bg-slate-950 border border-slate-808 border-slate-800/80 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
                 <button
@@ -600,76 +673,79 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span>Tìm</span>
                 </button>
               </form>
-              {addMessage && (
-                <div className={`p-2 rounded-lg text-[10px] font-medium border ${addMessage.isError ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-green-500/10 border-green-500/20 text-green-400'}`}>
-                  {addMessage.text}
-                </div>
-              )}
-
-              {/* SEARCHED USER CARD DISPLAY (ZALO STYLE) */}
-              {searchedUser && (
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-3 animate-in slide-in-from-top-2 duration-150 mt-2">
-                  <div className="flex items-center gap-3">
-                    <div className="relative shrink-0">
-                      <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs overflow-hidden">
-                        {searchedUser.avatar ? (
-                          <img src={searchedUser.avatar} alt={searchedUser.displayName} className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{searchedUser.displayName ? searchedUser.displayName.slice(0, 2).toUpperCase() : 'US'}</span>
-                        )}
-                      </div>
-                      {/* online offline indicators status dot (green online, grey off) */}
-                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-slate-955 border-slate-950 rounded-full ${searchedUser.isOnline ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-xs font-bold text-slate-200 truncate">
-                        {searchedUser.displayName || searchedUser.username}
-                        {isMe && (
-                          <span className="ml-1.5 text-[9px] bg-blue-600/30 text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase">Bạn</span>
-                        )}
-                      </h4>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{searchedUser.phone || 'Không có SĐT'}</p>
-                      <p className="text-[9px] text-slate-400 mt-0.5">
-                        Trạng thái: <span className={searchedUser.isOnline ? 'text-green-400' : 'text-slate-400'}>{searchedUser.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {isMe ? (
-                    <div className="text-center text-[10px] text-slate-400 py-1 border-t border-slate-800/60">
-                      Đây là số điện thoại của bạn
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onStartDirectChat(searchedUser._id)}
-                        className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
-                      >
-                        <IconMessageCircle2 size={13} />
-                        <span>Nhắn tin</span>
-                      </button>
-                      
-                      {!isFriend && (
-                        <button
-                          onClick={handleSendRequestFromCard}
-                          className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
-                        >
-                          <IconUserPlus size={13} />
-                          <span>Kết bạn</span>
-                        </button>
-                      )}
-
-                      <button
-                        onClick={handleToggleBlockFromCard}
-                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 ${isSearchedUserBlocked ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white'}`}
-                      >
-                        <span>{isSearchedUserBlocked ? 'Bỏ chặn' : 'Chặn'}</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
+
+            {/* Results & Status Messages (Rendered below header) */}
+            {(addMessage || searchedUser) && (
+              <div className="p-3 border-b border-slate-800/80 bg-slate-900/20 space-y-2 shrink-0">
+                {addMessage && (
+                  <div className={`p-2 rounded-lg text-[10px] font-medium border ${addMessage.isError ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-green-500/10 border-green-500/20 text-green-400'}`}>
+                    {addMessage.text}
+                  </div>
+                )}
+                {searchedUser && (
+                  <div className="p-3 bg-slate-955 bg-slate-950 border border-slate-808 border-slate-800 rounded-xl space-y-3 animate-in slide-in-from-top-2 duration-150">
+                    <div className="flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs overflow-hidden">
+                          {searchedUser.avatar ? (
+                            <img src={searchedUser.avatar} alt={searchedUser.displayName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{searchedUser.displayName ? searchedUser.displayName.slice(0, 2).toUpperCase() : 'US'}</span>
+                          )}
+                        </div>
+                        <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-slate-955 border-slate-950 rounded-full ${searchedUser.isOnline ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-slate-200 truncate">
+                          {searchedUser.displayName || searchedUser.username}
+                          {isMe && (
+                            <span className="ml-1.5 text-[9px] bg-blue-600/30 text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase">Bạn</span>
+                          )}
+                        </h4>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{searchedUser.phone || 'Không có SĐT'}</p>
+                        <p className="text-[9px] text-slate-400 mt-0.5">
+                          Trạng thái: <span className={searchedUser.isOnline ? 'text-green-400' : 'text-slate-400'}>{searchedUser.isOnline ? 'Đang hoạt động' : 'Ngoại tuyến'}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {isMe ? (
+                      <div className="text-center text-[10px] text-slate-400 py-1 border-t border-slate-800/60">
+                        Đây là số điện thoại của bạn
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => onStartDirectChat(searchedUser._id)}
+                          className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                        >
+                          <IconMessageCircle2 size={13} />
+                          <span>Nhắn tin</span>
+                        </button>
+
+                        {!isFriend && (
+                          <button
+                            onClick={handleSendRequestFromCard}
+                            className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                          >
+                            <IconUserPlus size={13} />
+                            <span>Kết bạn</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={handleToggleBlockFromCard}
+                          className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 ${isSearchedUserBlocked ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white'}`}
+                        >
+                          <span>{isSearchedUserBlocked ? 'Bỏ chặn' : 'Chặn'}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Sub-tabs buttons */}
             <div className="flex border-b border-slate-850 px-2 py-1 gap-1 bg-slate-900/40 shrink-0">
@@ -864,6 +940,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 ? 'Bỏ ghim cuộc trò chuyện'
                 : 'Ghim cuộc trò chuyện'}
             </span>
+          </button>
+
+          <button
+            onClick={() => {
+              onDeleteConversation(activeMenuId);
+              setActiveMenuId(null);
+            }}
+            className="w-full text-left px-3 py-2 hover:bg-slate-850 hover:text-rose-400 text-rose-500 flex items-center gap-2 cursor-pointer transition-colors border-t border-slate-800/60 mt-1 pt-2 animate-fade-in"
+          >
+            <IconTrash size={14} />
+            <span>Xóa lịch sử trò chuyện</span>
           </button>
         </div>
       )}

@@ -86,13 +86,24 @@ export class MessagesService {
     conversationId: string,
     limit = 50,
     before?: string,
+    userId?: string,
   ): Promise<any[]> {
     const query: any = {
       conversationId: new Types.ObjectId(conversationId),
     };
 
+    if (userId) {
+      const conversation = await this.conversationsService.findById(conversationId);
+      if (conversation) {
+        const participant = conversation.participants.find(p => p.userId.toString() === userId);
+        if (participant && participant.clearHistoryAt) {
+          query.createdAt = { ...query.createdAt, $gt: new Date(participant.clearHistoryAt) };
+        }
+      }
+    }
+
     if (before) {
-      query.createdAt = { $lt: new Date(before) };
+      query.createdAt = { ...query.createdAt, $lt: new Date(before) };
     }
 
     const messages = await this.messageModel.find(query)
@@ -241,11 +252,23 @@ export class MessagesService {
     return populated;
   }
 
-  async getPinnedMessages(conversationId: string): Promise<MessageDocument[]> {
-    return this.messageModel.find({
+  async getPinnedMessages(conversationId: string, userId?: string): Promise<MessageDocument[]> {
+    const query: any = {
       conversationId: new Types.ObjectId(conversationId),
       isPinned: true,
-    })
+    };
+
+    if (userId) {
+      const conversation = await this.conversationsService.findById(conversationId);
+      if (conversation) {
+        const participant = conversation.participants.find(p => p.userId.toString() === userId);
+        if (participant && participant.clearHistoryAt) {
+          query.createdAt = { $gt: new Date(participant.clearHistoryAt) };
+        }
+      }
+    }
+
+    return this.messageModel.find(query)
       .sort({ pinnedAt: -1 })
       .populate([
         {

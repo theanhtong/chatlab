@@ -30,6 +30,9 @@ export class Participant {
 
   @Prop({ type: Date, default: null })
   archivedAt?: Date | null;
+
+  @Prop({ type: Date, default: null })
+  clearHistoryAt?: Date | null;
 }
 
 export const ParticipantSchema = SchemaFactory.createForClass(Participant);
