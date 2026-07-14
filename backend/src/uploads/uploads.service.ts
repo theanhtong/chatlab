@@ -11,9 +11,13 @@ export class UploadsService {
 
   constructor(private readonly configService: ConfigService) {
     const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
-    this.region = this.configService.get<string>('AWS_REGION') || 'ap-southeast-1';
-    this.bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME') || '';
+    const secretAccessKey = this.configService.get<string>(
+      'AWS_SECRET_ACCESS_KEY',
+    );
+    this.region =
+      this.configService.get<string>('AWS_REGION') || 'ap-southeast-1';
+    this.bucketName =
+      this.configService.get<string>('AWS_S3_BUCKET_NAME') || '';
 
     if (!accessKeyId || !secretAccessKey || !this.bucketName) {
       throw new Error('Missing AWS S3 Configuration in environment variables');
@@ -45,7 +49,9 @@ export class UploadsService {
 
       return `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${fileName}`;
     } catch (error) {
-      throw new InternalServerErrorException(`S3 upload failed: ${error.message}`);
+      throw new InternalServerErrorException(
+        `S3 upload failed: ${error.message}`,
+      );
     }
   }
 }

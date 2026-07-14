@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { API_URL } from '../config';
 import { IconX, IconCamera, IconLoader2, IconPencil, IconCalendar, IconPhone, IconUser, IconNotebook } from '@tabler/icons-react';
 
 interface ProfileModalProps {
@@ -55,7 +56,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:3000/uploads/image', {
+      const res = await fetch(`${API_URL}/uploads/image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -90,7 +91,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:3000/uploads/image', {
+      const res = await fetch(`${API_URL}/uploads/image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -115,7 +116,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/users/profile', {
+      const response = await fetch(`${API_URL}/users/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -5,6 +5,7 @@ import {
   IconChevronDown, IconChevronUp
 } from '@tabler/icons-react';
 import { getSocket } from '../socket';
+import { API_URL } from '../config';
 
 interface ChatAreaProps {
   user: any;
@@ -112,7 +113,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     formData.append('file', file);
 
     const isImage = file.type.startsWith('image/');
-    const url = `http://localhost:3000/uploads/${isImage ? 'image' : 'audio'}`;
+    const url = `${API_URL}/uploads/${isImage ? 'image' : 'audio'}`;
 
     try {
       const res = await fetch(url, {
@@ -156,7 +157,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         formData.append('file', audioFile);
 
         try {
-          const res = await fetch('http://localhost:3000/uploads/audio', {
+          const res = await fetch(`${API_URL}/uploads/audio`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData,
@@ -343,7 +344,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                 onClick={async () => {
                   if (!outgoingRequestObj?._id) return;
                   try {
-                    const res = await fetch(`http://localhost:3000/friend-requests/${outgoingRequestObj._id}/cancel`, {
+                    const res = await fetch(`${API_URL}/friend-requests/${outgoingRequestObj._id}/cancel`, {
                       method: 'POST',
                       headers: { 'Authorization': `Bearer ${token}` }
                     });
@@ -367,7 +368,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   onClick={async () => {
                     if (!incomingRequestObj?._id) return;
                     try {
-                      const res = await fetch(`http://localhost:3000/friend-requests/${incomingRequestObj._id}/accept`, {
+                      const res = await fetch(`${API_URL}/friend-requests/${incomingRequestObj._id}/accept`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` }
                       });
@@ -389,7 +390,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   onClick={async () => {
                     if (!incomingRequestObj?._id) return;
                     try {
-                      const res = await fetch(`http://localhost:3000/friend-requests/${incomingRequestObj._id}/decline`, {
+                      const res = await fetch(`${API_URL}/friend-requests/${incomingRequestObj._id}/decline`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` }
                       });
@@ -417,7 +418,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                     return;
                   }
                   try {
-                    const res = await fetch('http://localhost:3000/friend-requests/send', {
+                    const res = await fetch(`${API_URL}/friend-requests/send`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -448,7 +449,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                   if (!otherUserId) return;
                   if (!confirm('Bạn có chắc chắn muốn chặn người dùng này không?')) return;
                   try {
-                    const res = await fetch('http://localhost:3000/blocked-users', {
+                    const res = await fetch(`${API_URL}/blocked-users`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',

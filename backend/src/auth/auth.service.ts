@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -17,9 +23,12 @@ export class AuthService {
     private readonly configService: ConfigService,
     @InjectModel(Otp.name)
     private readonly otpModel: Model<OtpDocument>,
-  ) { }
+  ) {}
 
-  async requestOtp(phone: string, type = 'register'): Promise<{ message: string; code: string }> {
+  async requestOtp(
+    phone: string,
+    type = 'register',
+  ): Promise<{ message: string; code: string }> {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -39,31 +48,43 @@ export class AuthService {
     };
   }
 
-  async verifyOtp(phone: string, code: string, type = 'register'): Promise<any> {
-    const otp = await this.otpModel.findOne({
-      phone,
-      code,
-      type,
-      expiresAt: { $gt: new Date() },
-    }).exec();
-
-    if (!otp) {
-      const existingOtp = await this.otpModel.findOne({
+  async verifyOtp(
+    phone: string,
+    code: string,
+    type = 'register',
+  ): Promise<any> {
+    const otp = await this.otpModel
+      .findOne({
         phone,
+        code,
         type,
         expiresAt: { $gt: new Date() },
-      }).exec();
+      })
+      .exec();
+
+    if (!otp) {
+      const existingOtp = await this.otpModel
+        .findOne({
+          phone,
+          type,
+          expiresAt: { $gt: new Date() },
+        })
+        .exec();
 
       if (existingOtp) {
-        await this.otpModel.findByIdAndUpdate(
-          existingOtp._id,
-          { $inc: { attempts: 1 } },
-          { new: true },
-        ).exec();
+        await this.otpModel
+          .findByIdAndUpdate(
+            existingOtp._id,
+            { $inc: { attempts: 1 } },
+            { new: true },
+          )
+          .exec();
 
         if (existingOtp.attempts >= 2) {
           await this.otpModel.findByIdAndDelete(existingOtp._id).exec();
-          throw new BadRequestException('Too many verification attempts. OTP has been invalidated.');
+          throw new BadRequestException(
+            'Too many verification attempts. OTP has been invalidated.',
+          );
         }
       }
       throw new BadRequestException('Invalid or expired OTP');
@@ -80,7 +101,9 @@ export class AuthService {
 
   async register(registerDto: any): Promise<any> {
     const { username, password, displayName, phone } = registerDto;
-    const isDev = this.configService.get<string>('NODE_ENV') === 'development' || process.env.NODE_ENV === 'development';
+    const isDev =
+      this.configService.get<string>('NODE_ENV') === 'development' ||
+      process.env.NODE_ENV === 'development';
 
     const existingPhone = await this.usersService.findByPhone(phone);
     if (existingPhone && existingPhone.isPhoneVerified && !isDev) {
@@ -115,7 +138,9 @@ export class AuthService {
 
   async login(loginDto: any, deviceInfo: string): Promise<any> {
     const { username, password } = loginDto;
-    const isDev = this.configService.get<string>('NODE_ENV') === 'development' || process.env.NODE_ENV === 'development';
+    const isDev =
+      this.configService.get<string>('NODE_ENV') === 'development' ||
+      process.env.NODE_ENV === 'development';
 
     const user = await this.usersService.findByUsername(username);
     if (!user) {
@@ -123,7 +148,9 @@ export class AuthService {
     }
 
     if (user.isBanned) {
-      throw new ForbiddenException('Tài khoản của bạn đã bị khóa bởi quản trị viên');
+      throw new ForbiddenException(
+        'Tài khoản của bạn đã bị khóa bởi quản trị viên',
+      );
     }
 
     if (!user.isPhoneVerified && !isDev) {
@@ -135,12 +162,25 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.generateTokens(user._id.toString(), user.username, user.role || 'user');
-    const refreshExpiresInDays = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRES_DAYS') || '7');
-    const refreshExpiresAt = new Date(Date.now() + refreshExpiresInDays * 24 * 60 * 60 * 1000);
+    const tokens = await this.generateTokens(
+      user._id.toString(),
+      user.username,
+      user.role || 'user',
+    );
+    const refreshExpiresInDays = parseInt(
+      this.configService.get<string>('JWT_REFRESH_EXPIRES_DAYS') || '7',
+    );
+    const refreshExpiresAt = new Date(
+      Date.now() + refreshExpiresInDays * 24 * 60 * 60 * 1000,
+    );
 
     const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
-    await this.sessionsService.create(user._id.toString(), hashedRefreshToken, deviceInfo, refreshExpiresAt);
+    await this.sessionsService.create(
+      user._id.toString(),
+      hashedRefreshToken,
+      deviceInfo,
+      refreshExpiresAt,
+    );
 
     return {
       user: {
@@ -156,7 +196,9 @@ export class AuthService {
 
   async refresh(refreshToken: string, deviceInfo: string): Promise<any> {
     try {
-      const secret = this.configService.get<string>('JWT_SECRET') || 'default_jwt_secret_key_12345';
+      const secret =
+        this.configService.get<string>('JWT_SECRET') ||
+        'default_jwt_secret_key_12345';
       const payload = this.jwtService.verify(refreshToken, { secret });
 
       const userId = payload.sub;
@@ -167,11 +209,15 @@ export class AuthService {
         throw new UnauthorizedException('User not found');
       }
 
-      const activeSessions = await this.sessionsService.findActiveSessionsByUserId(userId);
+      const activeSessions =
+        await this.sessionsService.findActiveSessionsByUserId(userId);
 
       let matchingSession: any = null;
       for (const session of activeSessions) {
-        const isMatch = await bcrypt.compare(refreshToken, session.refreshToken);
+        const isMatch = await bcrypt.compare(
+          refreshToken,
+          session.refreshToken,
+        );
         if (isMatch) {
           matchingSession = session;
           break;
@@ -182,12 +228,20 @@ export class AuthService {
         throw new UnauthorizedException('Session not found or expired');
       }
 
-      const tokens = await this.generateTokens(userId, username, user.role || 'user');
+      const tokens = await this.generateTokens(
+        userId,
+        username,
+        user.role || 'user',
+      );
       const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10);
       matchingSession.refreshToken = hashedRefreshToken;
 
-      const refreshExpiresInDays = parseInt(this.configService.get<string>('JWT_REFRESH_EXPIRES_DAYS') || '7');
-      matchingSession.expiresAt = new Date(Date.now() + refreshExpiresInDays * 24 * 60 * 60 * 1000);
+      const refreshExpiresInDays = parseInt(
+        this.configService.get<string>('JWT_REFRESH_EXPIRES_DAYS') || '7',
+      );
+      matchingSession.expiresAt = new Date(
+        Date.now() + refreshExpiresInDays * 24 * 60 * 60 * 1000,
+      );
       matchingSession.deviceInfo = deviceInfo;
       await matchingSession.save();
 
@@ -208,15 +262,24 @@ export class AuthService {
 
   async logout(refreshToken: string): Promise<any> {
     try {
-      const secret = this.configService.get<string>('JWT_SECRET') || 'default_jwt_secret_key_12345';
+      const secret =
+        this.configService.get<string>('JWT_SECRET') ||
+        'default_jwt_secret_key_12345';
       const payload = this.jwtService.verify(refreshToken, { secret });
       const userId = payload.sub;
 
-      const activeSessions = await this.sessionsService.findActiveSessionsByUserId(userId);
+      const activeSessions =
+        await this.sessionsService.findActiveSessionsByUserId(userId);
       for (const session of activeSessions) {
-        const isMatch = await bcrypt.compare(refreshToken, session.refreshToken);
+        const isMatch = await bcrypt.compare(
+          refreshToken,
+          session.refreshToken,
+        );
         if (isMatch) {
-          await this.sessionsService.deleteSession(userId, session._id.toString());
+          await this.sessionsService.deleteSession(
+            userId,
+            session._id.toString(),
+          );
           break;
         }
       }
@@ -226,16 +289,30 @@ export class AuthService {
     }
   }
 
-  async generateTokens(userId: string, username: string, role: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async generateTokens(
+    userId: string,
+    username: string,
+    role: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const payload = { sub: userId, username, role };
 
-    const secret = this.configService.get<string>('JWT_SECRET') || 'default_jwt_secret_key_12345';
-    const accessExpires = this.configService.get<string>('JWT_ACCESS_EXPIRES') || '15m';
-    const refreshExpires = this.configService.get<string>('JWT_REFRESH_EXPIRES') || '7d';
+    const secret =
+      this.configService.get<string>('JWT_SECRET') ||
+      'default_jwt_secret_key_12345';
+    const accessExpires =
+      this.configService.get<string>('JWT_ACCESS_EXPIRES') || '15m';
+    const refreshExpires =
+      this.configService.get<string>('JWT_REFRESH_EXPIRES') || '7d';
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, { secret, expiresIn: accessExpires as any }),
-      this.jwtService.signAsync(payload, { secret, expiresIn: refreshExpires as any }),
+      this.jwtService.signAsync(payload, {
+        secret,
+        expiresIn: accessExpires as any,
+      }),
+      this.jwtService.signAsync(payload, {
+        secret,
+        expiresIn: refreshExpires as any,
+      }),
     ]);
 
     return { accessToken, refreshToken };

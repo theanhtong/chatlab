@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import {
   IconMessage, IconLogout, IconSettings, IconSearch,
   IconPin, IconDotsVertical, IconUsers, IconUserPlus,
@@ -95,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setLoadingFriends(true);
     try {
       // 1. Friends list
-      const fRes = await fetch('http://localhost:3000/friends', {
+      const fRes = await fetch(`${API_URL}/friends`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (fRes.ok) {
@@ -104,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
 
       // 2. Incoming Requests
-      const inRes = await fetch('http://localhost:3000/friend-requests/pending/incoming', {
+      const inRes = await fetch(`${API_URL}/friend-requests/pending/incoming`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (inRes.ok) {
@@ -114,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
 
       // 3. Outgoing Requests
-      const outRes = await fetch('http://localhost:3000/friend-requests/pending/outgoing', {
+      const outRes = await fetch(`${API_URL}/friend-requests/pending/outgoing`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (outRes.ok) {
@@ -136,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const checkBlockStatus = async (targetId: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/blocked-users/check/${targetId}`, {
+      const res = await fetch(`${API_URL}/blocked-users/check/${targetId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -157,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setSearchedUser(null);
 
     try {
-      const res = await fetch(`http://localhost:3000/users/search-phone/${addPhone}`, {
+      const res = await fetch(`${API_URL}/users/search-phone/${addPhone}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -188,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleSendRequestFromCard = async () => {
     if (!searchedUser) return;
     try {
-      const res = await fetch('http://localhost:3000/friend-requests/send', {
+      const res = await fetch(`${API_URL}/friend-requests/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -210,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleToggleBlockFromCard = async () => {
     if (!searchedUser) return;
-    const url = `http://localhost:3000/blocked-users${isSearchedUserBlocked ? '/unblock' : ''}`;
+    const url = `${API_URL}/blocked-users${isSearchedUserBlocked ? '/unblock' : ''}`;
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -234,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleAcceptRequest = async (requestId: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/friend-requests/${requestId}/accept`, {
+      const res = await fetch(`${API_URL}/friend-requests/${requestId}/accept`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -248,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleDeclineRequest = async (requestId: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/friend-requests/${requestId}/decline`, {
+      const res = await fetch(`${API_URL}/friend-requests/${requestId}/decline`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -262,7 +263,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const handleCancelRequest = async (requestId: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/friend-requests/${requestId}/cancel`, {
+      const res = await fetch(`${API_URL}/friend-requests/${requestId}/cancel`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -277,7 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleRemoveFriend = async (friendId: string) => {
     if (!confirm('Bạn có chắc chắn muốn xóa kết bạn với người dùng này không?')) return;
     try {
-      const res = await fetch(`http://localhost:3000/friends/${friendId}`, {
+      const res = await fetch(`${API_URL}/friends/${friendId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

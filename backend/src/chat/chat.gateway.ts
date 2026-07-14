@@ -15,7 +15,12 @@ import { ConversationsService } from '../conversations/conversations.service';
 import { MessagesService } from '../messages/messages.service';
 import { MessageReceiptsService } from '../message-receipts/message-receipts.service';
 import { SocketEvent } from './enums/socket-event.enum';
-import { Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Logger,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -37,18 +42,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly conversationsService: ConversationsService,
     private readonly messagesService: MessagesService,
     private readonly messageReceiptsService: MessageReceiptsService,
-  ) { }
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
       const token = this.extractToken(client);
       if (!token) {
-        this.logger.warn(`Disconnecting unauthenticated client ${client.id}: No token provided`);
+        this.logger.warn(
+          `Disconnecting unauthenticated client ${client.id}: No token provided`,
+        );
         client.disconnect(true);
         return;
       }
 
-      const secret = this.configService.get<string>('JWT_SECRET') || 'default_jwt_secret_key_12345';
+      const secret =
+        this.configService.get<string>('JWT_SECRET') ||
+        'default_jwt_secret_key_12345';
       const payload = await this.jwtService.verifyAsync(token, { secret });
 
       const userId = payload.sub;
@@ -63,7 +72,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       await client.join(`user_${userId}`);
 
-      this.logger.log(`Client authenticated: User ${username} (Id: ${userId}) connected on socket ${client.id}`);
+      this.logger.log(
+        `Client authenticated: User ${username} (Id: ${userId}) connected on socket ${client.id}`,
+      );
 
       const user = await this.usersService.updateOnlineStatus(userId, true);
 
@@ -73,9 +84,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         isOnline: true,
         displayName: user?.displayName,
       });
-
     } catch (error) {
-      this.logger.warn(`Disconnecting client ${client.id}: JWT verification failed (${error.message})`);
+      this.logger.warn(
+        `Disconnecting client ${client.id}: JWT verification failed (${error.message})`,
+      );
       client.disconnect(true);
     }
   }
@@ -83,7 +95,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(client: Socket) {
     const user = client.data.user;
     if (!user) {
-      this.logger.log(`Client disconnected: Unauthenticated socket ${client.id}`);
+      this.logger.log(
+        `Client disconnected: Unauthenticated socket ${client.id}`,
+      );
       return;
     }
 
@@ -96,8 +110,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (sockets.size === 0) {
         this.activeUsers.delete(userId);
 
-        this.logger.log(`User ${username} is offline (all sockets disconnected)`);
-        const updatedUser = await this.usersService.updateOnlineStatus(userId, false);
+        this.logger.log(
+          `User ${username} is offline (all sockets disconnected)`,
+        );
+        const updatedUser = await this.usersService.updateOnlineStatus(
+          userId,
+          false,
+        );
 
         this.server.emit(SocketEvent.USER_STATUS, {
           userId,
@@ -106,14 +125,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           lastActiveAt: updatedUser?.lastActiveAt || new Date(),
         });
       } else {
-        this.logger.log(`Socket disconnected for ${username}: ${sockets.size} active connection(s) remaining`);
+        this.logger.log(
+          `Socket disconnected for ${username}: ${sockets.size} active connection(s) remaining`,
+        );
       }
     }
   }
 
   private extractToken(client: Socket): string | null {
     const authHeader = client.handshake.headers['authorization'];
-    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    if (
+      authHeader &&
+      typeof authHeader === 'string' &&
+      authHeader.startsWith('Bearer ')
+    ) {
       return authHeader.split(' ')[1];
     }
 
@@ -145,11 +170,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('send-message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId?: string; receiverId?: string; content: string | null; type?: string; attachments?: string[]; parentId?: string },
+    @MessageBody()
+    data: {
+      conversationId?: string;
+      receiverId?: string;
+      content: string | null;
+      type?: string;
+      attachments?: string[];
+      parentId?: string;
+    },
   ) {
     const user = client.data.user;
     if (!user) {
-      this.logger.warn(`Unauthorized send-message attempt from socket ${client.id}`);
+      this.logger.warn(
+        `Unauthorized send-message attempt from socket ${client.id}`,
+      );
       return { status: 'error', message: 'Unauthorized' };
     }
 
@@ -159,9 +194,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       if (!conversationId) {
         if (!data.receiverId) {
-          throw new BadRequestException('Either conversationId or receiverId must be provided');
+          throw new BadRequestException(
+            'Either conversationId or receiverId must be provided',
+          );
         }
-        const conversation = await this.conversationsService.findOrCreateDirect(senderId, data.receiverId);
+        const conversation = await this.conversationsService.findOrCreateDirect(
+          senderId,
+          data.receiverId,
+        );
         conversationId = conversation._id.toString();
       }
 
@@ -174,10 +214,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.parentId,
       );
 
-      const conversation = await this.conversationsService.findById(conversationId);
+      const conversation =
+        await this.conversationsService.findById(conversationId);
       if (conversation) {
-        conversation.participants.forEach(p => {
-          this.sendToUser(p.userId.toString(), SocketEvent.NEW_MESSAGE, message);
+        conversation.participants.forEach((p) => {
+          this.sendToUser(
+            p.userId.toString(),
+            SocketEvent.NEW_MESSAGE,
+            message,
+          );
         });
       }
 
@@ -199,7 +244,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     try {
-      await this.messageReceiptsService.markAsSeen(user.id, data.conversationId, data.messageId);
+      await this.messageReceiptsService.markAsSeen(
+        user.id,
+        data.conversationId,
+        data.messageId,
+      );
       return { status: 'ok', messageId: data.messageId };
     } catch (error) {
       this.logger.error(`Error marking message as seen: ${error.message}`);

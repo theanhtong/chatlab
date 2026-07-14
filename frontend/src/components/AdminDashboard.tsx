@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import {
   IconUsers, IconShield, IconBan, IconArrowLeftRight, IconChartBar
 } from '@tabler/icons-react';
@@ -57,7 +58,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, onClose, 
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/admin/stats?t=${Date.now()}`, {
+      const res = await fetch(`${API_URL}/admin/stats?t=${Date.now()}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Cache-Control': 'no-cache',
@@ -77,7 +78,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, onClose, 
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`http://localhost:3000/admin/users?t=${Date.now()}`, {
+      const res = await fetch(`${API_URL}/admin/users?t=${Date.now()}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Cache-Control': 'no-cache',
@@ -106,7 +107,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, onClose, 
     setUsers(prev => prev.map(u => u._id === userId ? { ...u, role: newRole } : u));
 
     try {
-      const res = await fetch(`http://localhost:3000/admin/users/${userId}/role`, {
+      const res = await fetch(`${API_URL}/admin/users/${userId}/role`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +140,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ token, onClose, 
 
     try {
       const endpoint = isBanned ? 'ban' : 'unban';
-      const res = await fetch(`http://localhost:3000/admin/users/${userId}/${endpoint}`, {
+      const res = await fetch(`${API_URL}/admin/users/${userId}/${endpoint}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -3,7 +3,7 @@ import { UsersService } from './users/users.service';
 
 @Injectable()
 export class AppService implements OnApplicationBootstrap {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   async onApplicationBootstrap() {
     await this.seedUsers();

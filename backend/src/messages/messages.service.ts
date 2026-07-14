@@ -1,9 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Message, MessageDocument } from './schemas/message.schema';
 import { ConversationsService } from '../conversations/conversations.service';
-import { MessageReceipt, MessageReceiptDocument } from '../message-receipts/schemas/message-receipt.schema';
+import {
+  MessageReceipt,
+  MessageReceiptDocument,
+} from '../message-receipts/schemas/message-receipt.schema';
 import { MessageStatus } from './enums/message-status.enum';
 import { ChatGateway } from '../chat/chat.gateway';
 import { SocketEvent } from '../chat/enums/socket-event.enum';
@@ -29,21 +39,26 @@ export class MessagesService {
     attachments: string[] = [],
     parentId?: string,
   ): Promise<MessageDocument> {
-    const conversation = await this.conversationsService.findById(conversationId);
+    const conversation =
+      await this.conversationsService.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
 
     const isParticipant = conversation.participants.some(
-      p => p.userId.toString() === senderId,
+      (p) => p.userId.toString() === senderId,
     );
     if (!isParticipant) {
-      throw new BadRequestException('You are not a participant in this conversation');
+      throw new BadRequestException(
+        'You are not a participant in this conversation',
+      );
     }
 
     let parentObjectId: Types.ObjectId | null = null;
     if (parentId) {
-      const parentMessage = await this.messageModel.findById(new Types.ObjectId(parentId)).exec();
+      const parentMessage = await this.messageModel
+        .findById(new Types.ObjectId(parentId))
+        .exec();
       if (!parentMessage) {
         throw new BadRequestException('Parent message not found');
       }
@@ -62,7 +77,9 @@ export class MessagesService {
 
     const savedMessage = await message.save();
 
-    await this.conversationsService.update(conversationId, { updatedAt: new Date() });
+    await this.conversationsService.update(conversationId, {
+      updatedAt: new Date(),
+    });
 
     return savedMessage.populate([
       {
@@ -77,8 +94,8 @@ export class MessagesService {
           path: 'senderId',
           model: 'User',
           select: '_id username displayName avatar',
-        }
-      }
+        },
+      },
     ]);
   }
 
@@ -93,11 +110,17 @@ export class MessagesService {
     };
 
     if (userId) {
-      const conversation = await this.conversationsService.findById(conversationId);
+      const conversation =
+        await this.conversationsService.findById(conversationId);
       if (conversation) {
-        const participant = conversation.participants.find(p => p.userId.toString() === userId);
+        const participant = conversation.participants.find(
+          (p) => p.userId.toString() === userId,
+        );
         if (participant && participant.clearHistoryAt) {
-          query.createdAt = { ...query.createdAt, $gt: new Date(participant.clearHistoryAt) };
+          query.createdAt = {
+            ...query.createdAt,
+            $gt: new Date(participant.clearHistoryAt),
+          };
         }
       }
     }
@@ -106,7 +129,8 @@ export class MessagesService {
       query.createdAt = { ...query.createdAt, $lt: new Date(before) };
     }
 
-    const messages = await this.messageModel.find(query)
+    const messages = await this.messageModel
+      .find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
       .populate([
@@ -122,20 +146,22 @@ export class MessagesService {
             path: 'senderId',
             model: 'User',
             select: '_id username displayName avatar',
-          }
-        }
+          },
+        },
       ])
       .lean()
       .exec();
 
-    const messageIds = messages.map(m => m._id);
-    const receipts = await this.messageReceiptModel.find({
-      messageId: { $in: messageIds },
-      status: MessageStatus.SEEN,
-    }).exec();
+    const messageIds = messages.map((m) => m._id);
+    const receipts = await this.messageReceiptModel
+      .find({
+        messageId: { $in: messageIds },
+        status: MessageStatus.SEEN,
+      })
+      .exec();
 
     const seenMap: { [key: string]: string[] } = {};
-    receipts.forEach(r => {
+    receipts.forEach((r) => {
       const mId = r.messageId.toString();
       if (!seenMap[mId]) {
         seenMap[mId] = [];
@@ -143,7 +169,7 @@ export class MessagesService {
       seenMap[mId].push(r.userId.toString());
     });
 
-    return messages.map(m => {
+    return messages.map((m) => {
       if (m.parentId && (m.parentId as any).isRevoked) {
         (m.parentId as any).content = null;
       }
@@ -155,8 +181,13 @@ export class MessagesService {
     });
   }
 
-  async revokeMessage(messageId: string, userId: string): Promise<MessageDocument> {
-    const message = await this.messageModel.findById(new Types.ObjectId(messageId)).exec();
+  async revokeMessage(
+    messageId: string,
+    userId: string,
+  ): Promise<MessageDocument> {
+    const message = await this.messageModel
+      .findById(new Types.ObjectId(messageId))
+      .exec();
     if (!message) {
       throw new NotFoundException('Message not found');
     }
@@ -181,28 +212,45 @@ export class MessagesService {
       select: '_id username displayName avatar',
     });
 
-    const conversation = await this.conversationsService.findById(message.conversationId.toString());
+    const conversation = await this.conversationsService.findById(
+      message.conversationId.toString(),
+    );
     if (conversation) {
-      conversation.participants.forEach(p => {
-        this.chatGateway.sendToUser(p.userId.toString(), SocketEvent.MESSAGE_REVOKED, {
-          messageId: message._id.toString(),
-          conversationId: message.conversationId.toString(),
-        });
+      conversation.participants.forEach((p) => {
+        this.chatGateway.sendToUser(
+          p.userId.toString(),
+          SocketEvent.MESSAGE_REVOKED,
+          {
+            messageId: message._id.toString(),
+            conversationId: message.conversationId.toString(),
+          },
+        );
       });
     }
 
     return populated;
   }
 
-  async togglePinMessage(messageId: string, userId: string, pin: boolean): Promise<MessageDocument> {
-    const message = await this.messageModel.findById(new Types.ObjectId(messageId)).exec();
+  async togglePinMessage(
+    messageId: string,
+    userId: string,
+    pin: boolean,
+  ): Promise<MessageDocument> {
+    const message = await this.messageModel
+      .findById(new Types.ObjectId(messageId))
+      .exec();
     if (!message) {
       throw new NotFoundException('Message not found');
     }
 
-    const isParticipant = await this.conversationsService.hasParticipant(message.conversationId.toString(), userId);
+    const isParticipant = await this.conversationsService.hasParticipant(
+      message.conversationId.toString(),
+      userId,
+    );
     if (!isParticipant) {
-      throw new ForbiddenException('You are not a participant in this conversation');
+      throw new ForbiddenException(
+        'You are not a participant in this conversation',
+      );
     }
 
     if (pin && !message.isPinned) {
@@ -212,12 +260,14 @@ export class MessagesService {
       });
 
       if (pinnedCount >= 5) {
-        throw new BadRequestException('You can only pin a maximum of 5 messages per conversation');
+        throw new BadRequestException(
+          'You can only pin a maximum of 5 messages per conversation',
+        );
       }
 
       message.isPinned = true;
       message.pinnedAt = new Date();
-      message.pinnedBy = new Types.ObjectId(userId) as any;
+      message.pinnedBy = new Types.ObjectId(userId);
     } else if (!pin) {
       message.isPinned = false;
       message.pinnedAt = null;
@@ -238,37 +288,50 @@ export class MessagesService {
           path: 'senderId',
           model: 'User',
           select: '_id username displayName avatar',
-        }
-      }
+        },
+      },
     ]);
 
-    const conversation = await this.conversationsService.findById(message.conversationId.toString());
+    const conversation = await this.conversationsService.findById(
+      message.conversationId.toString(),
+    );
     if (conversation) {
-      conversation.participants.forEach(p => {
-        this.chatGateway.sendToUser(p.userId.toString(), SocketEvent.MESSAGE_PINNED, populated);
+      conversation.participants.forEach((p) => {
+        this.chatGateway.sendToUser(
+          p.userId.toString(),
+          SocketEvent.MESSAGE_PINNED,
+          populated,
+        );
       });
     }
 
     return populated;
   }
 
-  async getPinnedMessages(conversationId: string, userId?: string): Promise<MessageDocument[]> {
+  async getPinnedMessages(
+    conversationId: string,
+    userId?: string,
+  ): Promise<MessageDocument[]> {
     const query: any = {
       conversationId: new Types.ObjectId(conversationId),
       isPinned: true,
     };
 
     if (userId) {
-      const conversation = await this.conversationsService.findById(conversationId);
+      const conversation =
+        await this.conversationsService.findById(conversationId);
       if (conversation) {
-        const participant = conversation.participants.find(p => p.userId.toString() === userId);
+        const participant = conversation.participants.find(
+          (p) => p.userId.toString() === userId,
+        );
         if (participant && participant.clearHistoryAt) {
           query.createdAt = { $gt: new Date(participant.clearHistoryAt) };
         }
       }
     }
 
-    return this.messageModel.find(query)
+    return this.messageModel
+      .find(query)
       .sort({ pinnedAt: -1 })
       .populate([
         {
@@ -283,27 +346,37 @@ export class MessagesService {
             path: 'senderId',
             model: 'User',
             select: '_id username displayName avatar',
-          }
-        }
+          },
+        },
       ])
       .exec();
   }
 
-  async searchMessages(userId: string, queryText: string, conversationId?: string): Promise<MessageDocument[]> {
+  async searchMessages(
+    userId: string,
+    queryText: string,
+    conversationId?: string,
+  ): Promise<MessageDocument[]> {
     if (!queryText) {
       return [];
     }
 
     let conversationIds: Types.ObjectId[] = [];
     if (conversationId) {
-      const isParticipant = await this.conversationsService.hasParticipant(conversationId, userId);
+      const isParticipant = await this.conversationsService.hasParticipant(
+        conversationId,
+        userId,
+      );
       if (!isParticipant) {
-        throw new ForbiddenException('You are not a participant in this conversation');
+        throw new ForbiddenException(
+          'You are not a participant in this conversation',
+        );
       }
       conversationIds = [new Types.ObjectId(conversationId)];
     } else {
-      const userConversations = await this.conversationsService.getConversations(userId);
-      conversationIds = userConversations.map(c => c._id);
+      const userConversations =
+        await this.conversationsService.getConversations(userId);
+      conversationIds = userConversations.map((c) => c._id);
     }
 
     const query = {
@@ -312,7 +385,8 @@ export class MessagesService {
       content: { $regex: queryText, $options: 'i' },
     };
 
-    return this.messageModel.find(query)
+    return this.messageModel
+      .find(query)
       .sort({ createdAt: -1 })
       .populate({
         path: 'senderId',
@@ -322,15 +396,26 @@ export class MessagesService {
       .exec();
   }
 
-  async shareMessage(userId: string, messageId: string, targetConversationIds: string[]): Promise<MessageDocument[]> {
-    const sourceMessage = await this.messageModel.findById(new Types.ObjectId(messageId)).exec();
+  async shareMessage(
+    userId: string,
+    messageId: string,
+    targetConversationIds: string[],
+  ): Promise<MessageDocument[]> {
+    const sourceMessage = await this.messageModel
+      .findById(new Types.ObjectId(messageId))
+      .exec();
     if (!sourceMessage) {
       throw new NotFoundException('Message not found');
     }
 
-    const isSourceParticipant = await this.conversationsService.hasParticipant(sourceMessage.conversationId.toString(), userId);
+    const isSourceParticipant = await this.conversationsService.hasParticipant(
+      sourceMessage.conversationId.toString(),
+      userId,
+    );
     if (!isSourceParticipant) {
-      throw new ForbiddenException('You are not a participant in the source conversation');
+      throw new ForbiddenException(
+        'You are not a participant in the source conversation',
+      );
     }
 
     if (sourceMessage.isRevoked) {
@@ -340,9 +425,12 @@ export class MessagesService {
     const createdMessages: MessageDocument[] = [];
 
     for (const targetId of targetConversationIds) {
-      const isTargetParticipant = await this.conversationsService.hasParticipant(targetId, userId);
+      const isTargetParticipant =
+        await this.conversationsService.hasParticipant(targetId, userId);
       if (!isTargetParticipant) {
-        throw new ForbiddenException(`You are not a participant in the target conversation: ${targetId}`);
+        throw new ForbiddenException(
+          `You are not a participant in the target conversation: ${targetId}`,
+        );
       }
 
       const newMessage = await this.createMessage(
@@ -353,10 +441,15 @@ export class MessagesService {
         sourceMessage.attachments || [],
       );
 
-      const targetConversation = await this.conversationsService.findById(targetId);
+      const targetConversation =
+        await this.conversationsService.findById(targetId);
       if (targetConversation) {
-        targetConversation.participants.forEach(p => {
-          this.chatGateway.sendToUser(p.userId.toString(), SocketEvent.NEW_MESSAGE, newMessage);
+        targetConversation.participants.forEach((p) => {
+          this.chatGateway.sendToUser(
+            p.userId.toString(),
+            SocketEvent.NEW_MESSAGE,
+            newMessage,
+          );
         });
       }
 

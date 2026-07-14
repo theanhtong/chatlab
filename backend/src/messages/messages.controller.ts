@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Patch, Param, Query, Req, Body, UseGuards, ForbiddenException, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Query,
+  Req,
+  Body,
+  UseGuards,
+  ForbiddenException,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -18,7 +31,11 @@ export class MessagesController {
     @Query('conversationId') conversationId?: string,
   ) {
     const userId = req.user.sub;
-    return this.messagesService.searchMessages(userId, queryText, conversationId);
+    return this.messagesService.searchMessages(
+      userId,
+      queryText,
+      conversationId,
+    );
   }
 
   @Post('share')
@@ -29,7 +46,11 @@ export class MessagesController {
     @Body('targetConversationIds') targetConversationIds: string[],
   ) {
     const userId = req.user.sub;
-    return this.messagesService.shareMessage(userId, messageId, targetConversationIds);
+    return this.messagesService.shareMessage(
+      userId,
+      messageId,
+      targetConversationIds,
+    );
   }
 
   @Get(':conversationId')
@@ -40,21 +61,28 @@ export class MessagesController {
     @Query('before') before?: string,
   ) {
     const userId = req.user.sub;
-    
-    const isParticipant = await this.conversationsService.hasParticipant(conversationId, userId);
+
+    const isParticipant = await this.conversationsService.hasParticipant(
+      conversationId,
+      userId,
+    );
     if (!isParticipant) {
-      throw new ForbiddenException('You are not a participant in this conversation');
+      throw new ForbiddenException(
+        'You are not a participant in this conversation',
+      );
     }
 
-    return this.messagesService.getMessageHistory(conversationId, limit ? +limit : 50, before, userId);
+    return this.messagesService.getMessageHistory(
+      conversationId,
+      limit ? +limit : 50,
+      before,
+      userId,
+    );
   }
 
   @Post(':id/revoke')
   @HttpCode(HttpStatus.OK)
-  async revokeMessage(
-    @Req() req: any,
-    @Param('id') messageId: string,
-  ) {
+  async revokeMessage(@Req() req: any, @Param('id') messageId: string) {
     const userId = req.user.sub;
     return this.messagesService.revokeMessage(messageId, userId);
   }
@@ -65,9 +93,14 @@ export class MessagesController {
     @Param('conversationId') conversationId: string,
   ) {
     const userId = req.user.sub;
-    const isParticipant = await this.conversationsService.hasParticipant(conversationId, userId);
+    const isParticipant = await this.conversationsService.hasParticipant(
+      conversationId,
+      userId,
+    );
     if (!isParticipant) {
-      throw new ForbiddenException('You are not a participant in this conversation');
+      throw new ForbiddenException(
+        'You are not a participant in this conversation',
+      );
     }
     return this.messagesService.getPinnedMessages(conversationId, userId);
   }

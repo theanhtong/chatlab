@@ -1,7 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Conversation, ConversationDocument } from './schemas/conversation.schema';
+import {
+  Conversation,
+  ConversationDocument,
+} from './schemas/conversation.schema';
 import { UsersService } from '../users/users.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { ChatGateway } from '../chat/chat.gateway';
@@ -23,11 +33,16 @@ export class ConversationsService {
     private readonly usersService: UsersService,
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
-  ) { }
+  ) {}
 
-  async findOrCreateDirect(userId1: string, userId2: string): Promise<ConversationDocument> {
+  async findOrCreateDirect(
+    userId1: string,
+    userId2: string,
+  ): Promise<ConversationDocument> {
     if (userId1 === userId2) {
-      throw new BadRequestException('Cannot start a conversation with yourself');
+      throw new BadRequestException(
+        'Cannot start a conversation with yourself',
+      );
     }
 
     const id1 = new Types.ObjectId(userId1);
@@ -38,11 +53,13 @@ export class ConversationsService {
       throw new NotFoundException('Target user not found');
     }
 
-    const existing = await this.conversationModel.findOne({
-      type: ConversationType.DIRECT,
-      participants: { $size: 2 },
-      'participants.userId': { $all: [id1, id2] },
-    }).exec();
+    const existing = await this.conversationModel
+      .findOne({
+        type: ConversationType.DIRECT,
+        participants: { $size: 2 },
+        'participants.userId': { $all: [id1, id2] },
+      })
+      .exec();
 
     if (existing) {
       return existing;
@@ -59,12 +76,21 @@ export class ConversationsService {
     return newConversation.save();
   }
 
-  async createGroup(creatorId: string, dto: CreateGroupDto): Promise<ConversationDocument> {
+  async createGroup(
+    creatorId: string,
+    dto: CreateGroupDto,
+  ): Promise<ConversationDocument> {
     const creatorObjectId = new Types.ObjectId(creatorId);
-    const uniqueIds = Array.from(new Set(dto.participantIds.filter(id => id !== creatorId)));
+    const uniqueIds = Array.from(
+      new Set(dto.participantIds.filter((id) => id !== creatorId)),
+    );
 
     const participantsList = [
-      { userId: creatorObjectId, role: ParticipantRole.ADMIN, joinedAt: new Date() }
+      {
+        userId: creatorObjectId,
+        role: ParticipantRole.ADMIN,
+        joinedAt: new Date(),
+      },
     ];
 
     for (const pId of uniqueIds) {
@@ -95,31 +121,54 @@ export class ConversationsService {
       select: '_id username displayName avatar isOnline lastActiveAt',
     });
 
-    populated.participants.forEach(p => {
-      this.chatGateway.sendToUser(p.userId._id.toString(), SocketEvent.GROUP_CREATED, populated);
+    populated.participants.forEach((p) => {
+      this.chatGateway.sendToUser(
+        p.userId._id.toString(),
+        SocketEvent.GROUP_CREATED,
+        populated,
+      );
     });
 
     return populated;
   }
 
-  async addMember(conversationId: string, actorId: string, targetUserId: string): Promise<ConversationDocument> {
+  async addMember(
+    conversationId: string,
+    actorId: string,
+    targetUserId: string,
+  ): Promise<ConversationDocument> {
     const conversation = await this.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
 
     if (conversation.type !== ConversationType.GROUP) {
-      throw new BadRequestException('Cannot add members to a direct conversation');
+      throw new BadRequestException(
+        'Cannot add members to a direct conversation',
+      );
     }
 
-    const actorParticipant = conversation.participants.find(p => p.userId.toString() === actorId);
-    if (!actorParticipant || ![ParticipantRole.ADMIN, ParticipantRole.MODERATOR].includes(actorParticipant.role)) {
-      throw new ForbiddenException('Only group admins or moderators can add members');
+    const actorParticipant = conversation.participants.find(
+      (p) => p.userId.toString() === actorId,
+    );
+    if (
+      !actorParticipant ||
+      ![ParticipantRole.ADMIN, ParticipantRole.MODERATOR].includes(
+        actorParticipant.role,
+      )
+    ) {
+      throw new ForbiddenException(
+        'Only group admins or moderators can add members',
+      );
     }
 
-    const isAlreadyMember = conversation.participants.some(p => p.userId.toString() === targetUserId);
+    const isAlreadyMember = conversation.participants.some(
+      (p) => p.userId.toString() === targetUserId,
+    );
     if (isAlreadyMember) {
-      throw new BadRequestException('User is already a participant of this conversation');
+      throw new BadRequestException(
+        'User is already a participant of this conversation',
+      );
     }
 
     const targetUser = await this.usersService.findById(targetUserId);
@@ -141,48 +190,77 @@ export class ConversationsService {
       select: '_id username displayName avatar isOnline lastActiveAt',
     });
 
-    populated.participants.forEach(p => {
-      this.chatGateway.sendToUser(p.userId._id.toString(), SocketEvent.MEMBER_JOINED, {
-        conversationId,
-        newMember: populated.participants.find(part => part.userId._id.toString() === targetUserId),
-      });
+    populated.participants.forEach((p) => {
+      this.chatGateway.sendToUser(
+        p.userId._id.toString(),
+        SocketEvent.MEMBER_JOINED,
+        {
+          conversationId,
+          newMember: populated.participants.find(
+            (part) => part.userId._id.toString() === targetUserId,
+          ),
+        },
+      );
     });
 
     return populated;
   }
 
-  async removeMember(conversationId: string, actorId: string, targetUserId: string): Promise<ConversationDocument> {
+  async removeMember(
+    conversationId: string,
+    actorId: string,
+    targetUserId: string,
+  ): Promise<ConversationDocument> {
     const conversation = await this.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
 
     if (conversation.type !== ConversationType.GROUP) {
-      throw new BadRequestException('Cannot remove members from a direct conversation');
+      throw new BadRequestException(
+        'Cannot remove members from a direct conversation',
+      );
     }
 
-    const actorParticipant = conversation.participants.find(p => p.userId.toString() === actorId);
+    const actorParticipant = conversation.participants.find(
+      (p) => p.userId.toString() === actorId,
+    );
     if (!actorParticipant) {
       throw new ForbiddenException('You are not a participant in this group');
     }
 
-    const targetParticipant = conversation.participants.find(p => p.userId.toString() === targetUserId);
+    const targetParticipant = conversation.participants.find(
+      (p) => p.userId.toString() === targetUserId,
+    );
     if (!targetParticipant) {
-      throw new BadRequestException('Target user is not a member of this group');
+      throw new BadRequestException(
+        'Target user is not a member of this group',
+      );
     }
 
     const isSelfLeaving = actorId === targetUserId;
 
     if (!isSelfLeaving) {
       if (actorParticipant.role === ParticipantRole.MEMBER) {
-        throw new ForbiddenException('Only group admins or moderators can kick members');
+        throw new ForbiddenException(
+          'Only group admins or moderators can kick members',
+        );
       }
-      if (actorParticipant.role === ParticipantRole.MODERATOR && [ParticipantRole.ADMIN, ParticipantRole.MODERATOR].includes(targetParticipant.role)) {
-        throw new ForbiddenException('Moderators cannot remove other moderators or admins');
+      if (
+        actorParticipant.role === ParticipantRole.MODERATOR &&
+        [ParticipantRole.ADMIN, ParticipantRole.MODERATOR].includes(
+          targetParticipant.role,
+        )
+      ) {
+        throw new ForbiddenException(
+          'Moderators cannot remove other moderators or admins',
+        );
       }
     }
 
-    conversation.participants = conversation.participants.filter(p => p.userId.toString() !== targetUserId) as any;
+    conversation.participants = conversation.participants.filter(
+      (p) => p.userId.toString() !== targetUserId,
+    );
 
     const saved = await conversation.save();
     const populated = await saved.populate({
@@ -197,18 +275,27 @@ export class ConversationsService {
       kicked: !isSelfLeaving,
     });
 
-    populated.participants.forEach(p => {
-      this.chatGateway.sendToUser(p.userId._id.toString(), SocketEvent.MEMBER_LEFT, {
-        conversationId,
-        leftUserId: targetUserId,
-        kicked: !isSelfLeaving,
-      });
+    populated.participants.forEach((p) => {
+      this.chatGateway.sendToUser(
+        p.userId._id.toString(),
+        SocketEvent.MEMBER_LEFT,
+        {
+          conversationId,
+          leftUserId: targetUserId,
+          kicked: !isSelfLeaving,
+        },
+      );
     });
 
     return populated;
   }
 
-  async updateRole(conversationId: string, actorId: string, targetUserId: string, role: ParticipantRole): Promise<ConversationDocument> {
+  async updateRole(
+    conversationId: string,
+    actorId: string,
+    targetUserId: string,
+    role: ParticipantRole,
+  ): Promise<ConversationDocument> {
     if (!Object.values(ParticipantRole).includes(role)) {
       throw new BadRequestException('Invalid role name');
     }
@@ -219,17 +306,27 @@ export class ConversationsService {
     }
 
     if (conversation.type !== ConversationType.GROUP) {
-      throw new BadRequestException('Cannot change roles in a direct conversation');
+      throw new BadRequestException(
+        'Cannot change roles in a direct conversation',
+      );
     }
 
-    const actorParticipant = conversation.participants.find(p => p.userId.toString() === actorId);
+    const actorParticipant = conversation.participants.find(
+      (p) => p.userId.toString() === actorId,
+    );
     if (!actorParticipant || actorParticipant.role !== ParticipantRole.ADMIN) {
-      throw new ForbiddenException('Only group admins can change participant roles');
+      throw new ForbiddenException(
+        'Only group admins can change participant roles',
+      );
     }
 
-    const targetParticipant = conversation.participants.find(p => p.userId.toString() === targetUserId);
+    const targetParticipant = conversation.participants.find(
+      (p) => p.userId.toString() === targetUserId,
+    );
     if (!targetParticipant) {
-      throw new BadRequestException('Target user is not a member of this group');
+      throw new BadRequestException(
+        'Target user is not a member of this group',
+      );
     }
 
     targetParticipant.role = role;
@@ -241,30 +338,50 @@ export class ConversationsService {
       select: '_id username displayName avatar isOnline lastActiveAt',
     });
 
-    populated.participants.forEach(p => {
-      this.chatGateway.sendToUser(p.userId._id.toString(), SocketEvent.ROLE_UPDATED, {
-        conversationId,
-        targetUserId,
-        newRole: role,
-      });
+    populated.participants.forEach((p) => {
+      this.chatGateway.sendToUser(
+        p.userId._id.toString(),
+        SocketEvent.ROLE_UPDATED,
+        {
+          conversationId,
+          targetUserId,
+          newRole: role,
+        },
+      );
     });
 
     return populated;
   }
 
-  async updateGroupDetails(conversationId: string, actorId: string, name?: string, avatar?: string): Promise<ConversationDocument> {
+  async updateGroupDetails(
+    conversationId: string,
+    actorId: string,
+    name?: string,
+    avatar?: string,
+  ): Promise<ConversationDocument> {
     const conversation = await this.findById(conversationId);
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
 
     if (conversation.type !== ConversationType.GROUP) {
-      throw new BadRequestException('Cannot update details of a direct conversation');
+      throw new BadRequestException(
+        'Cannot update details of a direct conversation',
+      );
     }
 
-    const actorParticipant = conversation.participants.find(p => p.userId.toString() === actorId);
-    if (!actorParticipant || ![ParticipantRole.ADMIN, ParticipantRole.MODERATOR].includes(actorParticipant.role)) {
-      throw new ForbiddenException('Only group admins or moderators can update group details');
+    const actorParticipant = conversation.participants.find(
+      (p) => p.userId.toString() === actorId,
+    );
+    if (
+      !actorParticipant ||
+      ![ParticipantRole.ADMIN, ParticipantRole.MODERATOR].includes(
+        actorParticipant.role,
+      )
+    ) {
+      throw new ForbiddenException(
+        'Only group admins or moderators can update group details',
+      );
     }
 
     if (name !== undefined) conversation.name = name;
@@ -277,8 +394,12 @@ export class ConversationsService {
       select: '_id username displayName avatar isOnline lastActiveAt',
     });
 
-    populated.participants.forEach(p => {
-      this.chatGateway.sendToUser(p.userId._id.toString(), SocketEvent.GROUP_UPDATED, populated);
+    populated.participants.forEach((p) => {
+      this.chatGateway.sendToUser(
+        p.userId._id.toString(),
+        SocketEvent.GROUP_UPDATED,
+        populated,
+      );
     });
 
     return populated;
@@ -287,9 +408,10 @@ export class ConversationsService {
   async getConversations(userId: string): Promise<any[]> {
     const userObjectId = new Types.ObjectId(userId);
 
-    const conversations = await this.conversationModel.find({
-      'participants.userId': userObjectId,
-    })
+    const conversations = await this.conversationModel
+      .find({
+        'participants.userId': userObjectId,
+      })
       .populate({
         path: 'participants.userId',
         model: 'User',
@@ -297,16 +419,19 @@ export class ConversationsService {
       })
       .exec();
 
-    const friendships = await this.friendModel.find({
-      userId: userObjectId,
-    }).exec();
-    const friendIds = friendships.map(f => f.friendId.toString());
+    const friendships = await this.friendModel
+      .find({
+        userId: userObjectId,
+      })
+      .exec();
+    const friendIds = friendships.map((f) => f.friendId.toString());
 
     const processed: any[] = [];
     for (const c of conversations) {
-      const lastMsg = await this.messageModel.findOne({
-        conversationId: c._id,
-      })
+      const lastMsg = await this.messageModel
+        .findOne({
+          conversationId: c._id,
+        })
         .sort({ createdAt: -1 })
         .populate({
           path: 'senderId',
@@ -315,11 +440,19 @@ export class ConversationsService {
         })
         .exec();
 
-      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
-      const clearHistoryAt = participant?.clearHistoryAt ? new Date(participant.clearHistoryAt) : null;
+      const participant = c.participants.find(
+        (p) => p.userId && (p.userId as any)._id.toString() === userId,
+      );
+      const clearHistoryAt = participant?.clearHistoryAt
+        ? new Date(participant.clearHistoryAt)
+        : null;
 
       let effectiveLastMsg = lastMsg;
-      if (lastMsg && clearHistoryAt && new Date(lastMsg.createdAt) <= clearHistoryAt) {
+      if (
+        lastMsg &&
+        clearHistoryAt &&
+        new Date(lastMsg.createdAt) <= clearHistoryAt
+      ) {
         effectiveLastMsg = null;
       }
 
@@ -328,8 +461,12 @@ export class ConversationsService {
           continue; // Hide conversation if cleared explicitly
         }
         if (c.type === ConversationType.DIRECT) {
-          const other = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
-          const otherId = other?.userId ? (other.userId as any)._id.toString() : null;
+          const other = c.participants.find(
+            (p) => p.userId && (p.userId as any)._id.toString() !== userId,
+          );
+          const otherId = other?.userId
+            ? (other.userId as any)._id.toString()
+            : null;
           if (!otherId || !friendIds.includes(otherId)) {
             continue; // Hide empty conversations with non-friends
           }
@@ -344,8 +481,10 @@ export class ConversationsService {
     const pinned: any[] = [];
     const unpinned: any[] = [];
 
-    processed.forEach(c => {
-      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+    processed.forEach((c) => {
+      const participant = c.participants.find(
+        (p) => p.userId && p.userId._id.toString() === userId,
+      );
       if (participant && participant.isPinned) {
         pinned.push(c);
       } else {
@@ -354,8 +493,12 @@ export class ConversationsService {
     });
 
     pinned.sort((a, b) => {
-      const pA = a.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
-      const pB = b.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
+      const pA = a.participants.find(
+        (p) => p.userId && p.userId._id.toString() === userId,
+      );
+      const pB = b.participants.find(
+        (p) => p.userId && p.userId._id.toString() === userId,
+      );
       const timeA = pA?.pinnedAt ? new Date(pA.pinnedAt).getTime() : 0;
       const timeB = pB?.pinnedAt ? new Date(pB.pinnedAt).getTime() : 0;
       return timeB - timeA;
@@ -378,20 +521,26 @@ export class ConversationsService {
     return this.conversationModel.findById(new Types.ObjectId(id)).exec();
   }
 
-  async hasParticipant(conversationId: string, userId: string): Promise<boolean> {
-    const conversation = await this.conversationModel.findOne({
-      _id: new Types.ObjectId(conversationId),
-      'participants.userId': new Types.ObjectId(userId),
-    }).exec();
+  async hasParticipant(
+    conversationId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const conversation = await this.conversationModel
+      .findOne({
+        _id: new Types.ObjectId(conversationId),
+        'participants.userId': new Types.ObjectId(userId),
+      })
+      .exec();
     return !!conversation;
   }
 
-  async update(id: string, updateDto: any): Promise<ConversationDocument | null> {
-    return this.conversationModel.findByIdAndUpdate(
-      new Types.ObjectId(id),
-      updateDto,
-      { new: true }
-    ).exec();
+  async update(
+    id: string,
+    updateDto: any,
+  ): Promise<ConversationDocument | null> {
+    return this.conversationModel
+      .findByIdAndUpdate(new Types.ObjectId(id), updateDto, { new: true })
+      .exec();
   }
 
   async searchConversations(userId: string, queryText: string): Promise<any[]> {
@@ -399,9 +548,10 @@ export class ConversationsService {
       return [];
     }
 
-    const conversations = await this.conversationModel.find({
-      'participants.userId': new Types.ObjectId(userId),
-    })
+    const conversations = await this.conversationModel
+      .find({
+        'participants.userId': new Types.ObjectId(userId),
+      })
       .populate({
         path: 'participants.userId',
         model: 'User',
@@ -409,16 +559,19 @@ export class ConversationsService {
       })
       .exec();
 
-    const friendships = await this.friendModel.find({
-      userId: new Types.ObjectId(userId),
-    }).exec();
-    const friendIds = friendships.map(f => f.friendId.toString());
+    const friendships = await this.friendModel
+      .find({
+        userId: new Types.ObjectId(userId),
+      })
+      .exec();
+    const friendIds = friendships.map((f) => f.friendId.toString());
 
     const processed: any[] = [];
     for (const c of conversations) {
-      const lastMsg = await this.messageModel.findOne({
-        conversationId: c._id,
-      })
+      const lastMsg = await this.messageModel
+        .findOne({
+          conversationId: c._id,
+        })
         .sort({ createdAt: -1 })
         .populate({
           path: 'senderId',
@@ -427,11 +580,19 @@ export class ConversationsService {
         })
         .exec();
 
-      const participant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() === userId);
-      const clearHistoryAt = participant?.clearHistoryAt ? new Date(participant.clearHistoryAt) : null;
+      const participant = c.participants.find(
+        (p) => p.userId && (p.userId as any)._id.toString() === userId,
+      );
+      const clearHistoryAt = participant?.clearHistoryAt
+        ? new Date(participant.clearHistoryAt)
+        : null;
 
       let effectiveLastMsg = lastMsg;
-      if (lastMsg && clearHistoryAt && new Date(lastMsg.createdAt) <= clearHistoryAt) {
+      if (
+        lastMsg &&
+        clearHistoryAt &&
+        new Date(lastMsg.createdAt) <= clearHistoryAt
+      ) {
         effectiveLastMsg = null;
       }
 
@@ -440,8 +601,12 @@ export class ConversationsService {
           continue; // Hide conversation if cleared explicitly
         }
         if (c.type === ConversationType.DIRECT) {
-          const other = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
-          const otherId = other?.userId ? (other.userId as any)._id.toString() : null;
+          const other = c.participants.find(
+            (p) => p.userId && (p.userId as any)._id.toString() !== userId,
+          );
+          const otherId = other?.userId
+            ? (other.userId as any)._id.toString()
+            : null;
           if (!otherId || !friendIds.includes(otherId)) {
             continue; // Hide empty conversations with non-friends
           }
@@ -455,41 +620,55 @@ export class ConversationsService {
 
     const regex = new RegExp(queryText, 'i');
 
-    return processed.filter(c => {
+    return processed.filter((c) => {
       if (c.type === ConversationType.GROUP) {
         return regex.test(c.name);
       } else {
-        const otherParticipant = c.participants.find(p => p.userId && (p.userId as any)._id.toString() !== userId);
+        const otherParticipant = c.participants.find(
+          (p) => p.userId && p.userId._id.toString() !== userId,
+        );
         if (!otherParticipant || !otherParticipant.userId) return false;
 
-        const userObj = otherParticipant.userId as any;
+        const userObj = otherParticipant.userId;
         return regex.test(userObj.username) || regex.test(userObj.displayName);
       }
     });
   }
 
-  async togglePin(conversationId: string, userId: string, pin: boolean): Promise<ConversationDocument> {
-    const conversation = await this.conversationModel.findById(new Types.ObjectId(conversationId)).exec();
+  async togglePin(
+    conversationId: string,
+    userId: string,
+    pin: boolean,
+  ): Promise<ConversationDocument> {
+    const conversation = await this.conversationModel
+      .findById(new Types.ObjectId(conversationId))
+      .exec();
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
 
-    const participant = conversation.participants.find(p => p.userId.toString() === userId);
+    const participant = conversation.participants.find(
+      (p) => p.userId.toString() === userId,
+    );
     if (!participant) {
-      throw new ForbiddenException('You are not a participant in this conversation');
+      throw new ForbiddenException(
+        'You are not a participant in this conversation',
+      );
     }
 
     if (pin && !participant.isPinned) {
       const pinnedCount = await this.conversationModel.countDocuments({
-        'participants': {
+        participants: {
           $elemMatch: {
             userId: new Types.ObjectId(userId),
             isPinned: true,
-          }
-        }
+          },
+        },
       });
       if (pinnedCount >= 3) {
-        throw new BadRequestException('You can only pin a maximum of 3 conversations');
+        throw new BadRequestException(
+          'You can only pin a maximum of 3 conversations',
+        );
       }
       participant.isPinned = true;
       participant.pinnedAt = new Date();
@@ -506,20 +685,32 @@ export class ConversationsService {
     });
   }
 
-  async deleteConversationForUser(conversationId: string, userId: string): Promise<any> {
-    const conversation = await this.conversationModel.findById(new Types.ObjectId(conversationId)).exec();
+  async deleteConversationForUser(
+    conversationId: string,
+    userId: string,
+  ): Promise<any> {
+    const conversation = await this.conversationModel
+      .findById(new Types.ObjectId(conversationId))
+      .exec();
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
 
-    const participant = conversation.participants.find(p => p.userId.toString() === userId);
+    const participant = conversation.participants.find(
+      (p) => p.userId.toString() === userId,
+    );
     if (!participant) {
-      throw new ForbiddenException('You are not a participant in this conversation');
+      throw new ForbiddenException(
+        'You are not a participant in this conversation',
+      );
     }
 
     participant.clearHistoryAt = new Date();
     await conversation.save();
 
-    return { success: true, message: 'Conversation history cleared successfully' };
+    return {
+      success: true,
+      message: 'Conversation history cleared successfully',
+    };
   }
 }

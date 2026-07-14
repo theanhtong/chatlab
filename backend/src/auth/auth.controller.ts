@@ -1,11 +1,18 @@
-import { Controller, Post, Body, Req, Headers, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Headers,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('request-otp')
   async requestOtp(@Body('phone') phone: string) {
@@ -18,10 +25,7 @@ export class AuthController {
   }
 
   @Post('verify-otp')
-  async verifyOtp(
-    @Body('phone') phone: string,
-    @Body('code') code: string,
-  ) {
+  async verifyOtp(@Body('phone') phone: string, @Body('code') code: string) {
     return this.authService.verifyOtp(phone, code);
   }
 

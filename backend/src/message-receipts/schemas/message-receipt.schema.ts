@@ -16,4 +16,5 @@ export class MessageReceipt {
   status: MessageStatus;
 }
 
-export const MessageReceiptSchema = SchemaFactory.createForClass(MessageReceipt);
+export const MessageReceiptSchema =
+  SchemaFactory.createForClass(MessageReceipt);

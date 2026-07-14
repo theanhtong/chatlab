@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../users/schemas/user.schema';
-import { Conversation, ConversationDocument } from '../conversations/schemas/conversation.schema';
+import {
+  Conversation,
+  ConversationDocument,
+} from '../conversations/schemas/conversation.schema';
 import { Message, MessageDocument } from '../messages/schemas/message.schema';
 import { ConversationType } from '../conversations/enums/conversation-type.enum';
 
@@ -10,12 +13,17 @@ import { ConversationType } from '../conversations/enums/conversation-type.enum'
 export class AdminService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    @InjectModel(Conversation.name) private readonly conversationModel: Model<ConversationDocument>,
-    @InjectModel(Message.name) private readonly messageModel: Model<MessageDocument>,
+    @InjectModel(Conversation.name)
+    private readonly conversationModel: Model<ConversationDocument>,
+    @InjectModel(Message.name)
+    private readonly messageModel: Model<MessageDocument>,
   ) {}
 
   async getAllUsers(): Promise<User[]> {
-    return this.userModel.find({}, { password: 0 }).sort({ createdAt: -1 }).exec();
+    return this.userModel
+      .find({}, { password: 0 })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   async toggleUserBan(userId: string): Promise<User> {
@@ -51,8 +59,12 @@ export class AdminService {
       this.userModel.countDocuments({ isBanned: true }).exec(),
       this.messageModel.countDocuments({ isRevoked: false }).exec(),
       this.conversationModel.countDocuments().exec(),
-      this.conversationModel.countDocuments({ type: ConversationType.DIRECT }).exec(),
-      this.conversationModel.countDocuments({ type: ConversationType.GROUP }).exec(),
+      this.conversationModel
+        .countDocuments({ type: ConversationType.DIRECT })
+        .exec(),
+      this.conversationModel
+        .countDocuments({ type: ConversationType.GROUP })
+        .exec(),
     ]);
 
     return {
@@ -67,11 +79,13 @@ export class AdminService {
   }
 
   async revokeMessageSystemWide(messageId: string): Promise<any> {
-    const message = await this.messageModel.findByIdAndUpdate(
-      new Types.ObjectId(messageId),
-      { isRevoked: true, content: null, isPinned: false },
-      { new: true }
-    ).exec();
+    const message = await this.messageModel
+      .findByIdAndUpdate(
+        new Types.ObjectId(messageId),
+        { isRevoked: true, content: null, isPinned: false },
+        { new: true },
+      )
+      .exec();
     return message;
   }
 }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../config';
 import { IconEye, IconEyeOff } from '@tabler/icons-react';
 
 interface LoginProps {
@@ -59,7 +60,7 @@ export const Login: React.FC<LoginProps> = ({
 
     setLoading(true);
 
-    const url = `http://localhost:3000/auth/${isRegister ? 'register' : 'login'}`;
+    const url = `${API_URL}/auth/${isRegister ? 'register' : 'login'}`;
     const body = isRegister 
       ? { username, password, displayName, phone } 
       : { username, password };

@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { API_URL } from './config';
 
 let socket: Socket | null = null;
 
@@ -11,7 +12,7 @@ export const connectSocket = (token: string): Socket => {
     socket.disconnect();
   }
 
-  socket = io('http://localhost:3000', {
+  socket = io(API_URL, {
     auth: { token },
     autoConnect: true,
     reconnection: true,

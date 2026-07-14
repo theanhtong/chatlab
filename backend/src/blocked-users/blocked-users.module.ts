@@ -7,7 +7,9 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: BlockedUser.name, schema: BlockedUserSchema }]),
+    MongooseModule.forFeature([
+      { name: BlockedUser.name, schema: BlockedUserSchema },
+    ]),
     AuthModule,
   ],
   controllers: [BlockedUsersController],

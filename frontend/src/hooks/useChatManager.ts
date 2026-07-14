@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { connectSocket, disconnectSocket, getSocket } from '../socket';
+import { API_URL } from '../config';
 
 export function useChatManager() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -43,7 +44,7 @@ export function useChatManager() {
           if (!activeRefreshPromise) {
             activeRefreshPromise = (async () => {
               try {
-                const refreshRes = await originalFetch('http://localhost:3000/auth/refresh', {
+                const refreshRes = await originalFetch(`${API_URL}/auth/refresh`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ refreshToken }),
@@ -115,7 +116,7 @@ export function useChatManager() {
 
   const fetchFriendsList = async (authToken: string) => {
     try {
-      const res = await fetch('http://localhost:3000/friends', {
+      const res = await fetch(`${API_URL}/friends`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (res.ok) {
@@ -129,7 +130,7 @@ export function useChatManager() {
 
   const fetchFriendRequests = async (authToken: string) => {
     try {
-      const inRes = await fetch('http://localhost:3000/friend-requests/pending/incoming', {
+      const inRes = await fetch(`${API_URL}/friend-requests/pending/incoming`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (inRes.ok) {
@@ -138,7 +139,7 @@ export function useChatManager() {
         setIncomingRequestsCount(inData.length);
       }
 
-      const outRes = await fetch('http://localhost:3000/friend-requests/pending/outgoing', {
+      const outRes = await fetch(`${API_URL}/friend-requests/pending/outgoing`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (outRes.ok) {
@@ -156,7 +157,7 @@ export function useChatManager() {
       const savedToken = localStorage.getItem('token');
       if (savedToken) {
         try {
-          const res = await fetch('http://localhost:3000/users/me', {
+          const res = await fetch(`${API_URL}/users/me`, {
             headers: { 'Authorization': `Bearer ${savedToken}` }
           });
           if (res.ok) {
@@ -196,7 +197,7 @@ export function useChatManager() {
   // Fetch conversations list
   const fetchConversations = async (authToken: string) => {
     try {
-      const res = await fetch('http://localhost:3000/conversations', {
+      const res = await fetch(`${API_URL}/conversations`, {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
       if (res.ok) {
@@ -211,7 +212,7 @@ export function useChatManager() {
   // Fetch message history for selected chat
   const fetchMessages = async (cId: string, authToken: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/messages/${cId}`, {
+      const res = await fetch(`${API_URL}/messages/${cId}`, {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
       if (res.ok) {
@@ -226,7 +227,7 @@ export function useChatManager() {
   // Fetch pinned messages for selected chat
   const fetchPinnedMessages = async (cId: string, authToken: string) => {
     try {
-      const res = await fetch(`http://localhost:3000/messages/${cId}/pinned`, {
+      const res = await fetch(`${API_URL}/messages/${cId}/pinned`, {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
       if (res.ok) {
@@ -422,7 +423,7 @@ export function useChatManager() {
   const handleTogglePinConversation = async (cId: string, pin: boolean) => {
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:3000/conversations/${cId}/pin`, {
+      const res = await fetch(`${API_URL}/conversations/${cId}/pin`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -448,7 +449,7 @@ export function useChatManager() {
   const handleTogglePinMessage = async (messageId: string, pin: boolean) => {
     if (!token) return;
     try {
-      const res = await fetch(`http://localhost:3000/messages/${messageId}/pin`, {
+      const res = await fetch(`${API_URL}/messages/${messageId}/pin`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -474,7 +475,7 @@ export function useChatManager() {
   const handleRevokeMessage = async (messageId: string) => {
     if (!token) return;
     try {
-      await fetch(`http://localhost:3000/messages/${messageId}/revoke`, {
+      await fetch(`${API_URL}/messages/${messageId}/revoke`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -486,7 +487,7 @@ export function useChatManager() {
   const handleStartDirectChat = async (targetUserId: string) => {
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:3000/conversations/direct', {
+      const res = await fetch(`${API_URL}/conversations/direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -508,7 +509,7 @@ export function useChatManager() {
   const handleShareConfirm = async (targetConversationIds: string[]) => {
     if (!token || !shareTargetMessage) return;
     try {
-      const res = await fetch('http://localhost:3000/messages/share', {
+      const res = await fetch(`${API_URL}/messages/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -533,7 +534,7 @@ export function useChatManager() {
     if (!token) return;
     if (!window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử cuộc trò chuyện này? Thao tác này chỉ xóa ở phía bạn, đối phương vẫn xem được lịch sử cũ.')) return;
     try {
-      const res = await fetch(`http://localhost:3000/conversations/${cId}`, {
+      const res = await fetch(`${API_URL}/conversations/${cId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
