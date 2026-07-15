@@ -78,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Searched user card states
   const [searchedUser, setSearchedUser] = useState<any | null>(null);
   const [isSearchedUserBlocked, setIsSearchedUserBlocked] = useState(false);
+  const [isSearchedUserBlockedByThem, setIsSearchedUserBlockedByThem] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
 
   useEffect(() => {
@@ -142,7 +143,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       });
       if (res.ok) {
         const data = await res.json();
-        setIsSearchedUserBlocked(data.blocked);
+        setIsSearchedUserBlocked(data.blockedByMe || false);
+        setIsSearchedUserBlockedByThem(data.blockedByThem || false);
       }
     } catch (err) {
       console.error(err);
@@ -172,6 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         if (myId === searchedId) {
           setIsFriend(false);
           setIsSearchedUserBlocked(false);
+          setIsSearchedUserBlockedByThem(false);
         } else {
           setIsFriend(friendsList.some(f => f._id === searchedId));
           checkBlockStatus(searchedId);
@@ -804,51 +807,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <span>{lang === 'vi' ? 'Nhắn tin' : 'Message'}</span>
                         </button>
 
-                        {!isFriend && (
-                          hasSentRequest ? (
-                            <button
-                              onClick={() => handleCancelRequest(outgoingRequestObj._id)}
-                              className="flex-1 py-1.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-rose-500/20"
-                            >
-                              <IconUserMinus size={13} />
-                              <span>{lang === 'vi' ? 'Thu hồi' : 'Cancel'}</span>
-                            </button>
-                          ) : hasReceivedRequest ? (
-                            <>
-                              <button
-                                onClick={() => handleAcceptRequest(incomingRequestObj._id)}
-                                className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
-                              >
-                                <IconCheck size={13} />
-                                <span>{lang === 'vi' ? 'Đồng ý' : 'Accept'}</span>
-                              </button>
-                              <button
-                                onClick={() => handleDeclineRequest(incomingRequestObj._id)}
-                                className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-350 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-slate-700/30"
-                              >
-                                <IconX size={13} />
-                                <span>{lang === 'vi' ? 'Từ chối' : 'Decline'}</span>
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={handleSendRequestFromCard}
-                              className="flex-1 py-1.5 bg-blue-600/15 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-blue-500/25"
-                            >
-                              <IconUserPlus size={13} />
-                              <span>{lang === 'vi' ? 'Kết bạn' : 'Add Friend'}</span>
-                            </button>
-                          )
-                        )}
+                        {isSearchedUserBlockedByThem ? (
+                          <div className="flex-1 py-1.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-lg text-[9px] font-bold text-center flex items-center justify-center select-none">
+                            {lang === 'vi' ? 'Đã bị chặn' : 'Blocked'}
+                          </div>
+                        ) : (
+                          <>
+                            {!isFriend && (
+                              hasSentRequest ? (
+                                <button
+                                  onClick={() => handleCancelRequest(outgoingRequestObj._id)}
+                                  className="flex-1 py-1.5 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-rose-500/20"
+                                >
+                                  <IconUserMinus size={13} />
+                                  <span>{lang === 'vi' ? 'Thu hồi' : 'Cancel'}</span>
+                                </button>
+                              ) : hasReceivedRequest ? (
+                                <>
+                                  <button
+                                    onClick={() => handleAcceptRequest(incomingRequestObj._id)}
+                                    className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1"
+                                  >
+                                    <IconCheck size={13} />
+                                    <span>{lang === 'vi' ? 'Đồng ý' : 'Accept'}</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeclineRequest(incomingRequestObj._id)}
+                                    className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-350 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-slate-700/30"
+                                  >
+                                    <IconX size={13} />
+                                    <span>{lang === 'vi' ? 'Từ chối' : 'Decline'}</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={handleSendRequestFromCard}
+                                  className="flex-1 py-1.5 bg-blue-600/15 text-blue-400 hover:bg-blue-600 hover:text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 border border-blue-500/25"
+                                >
+                                  <IconUserPlus size={13} />
+                                  <span>{lang === 'vi' ? 'Kết bạn' : 'Add Friend'}</span>
+                                </button>
+                              )
+                            )}
 
-                        {/* Show Block button ONLY when there are no pending requests */}
-                        {!hasSentRequest && !hasReceivedRequest && (
-                          <button
-                            onClick={handleToggleBlockFromCard}
-                            className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 ${isSearchedUserBlocked ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white'}`}
-                          >
-                            <span>{isSearchedUserBlocked ? (lang === 'vi' ? 'Bỏ chặn' : 'Unblock') : (lang === 'vi' ? 'Chặn' : 'Block')}</span>
-                          </button>
+                            {/* Show Block button ONLY when there are no pending requests */}
+                            {!hasSentRequest && !hasReceivedRequest && (
+                              <button
+                                onClick={handleToggleBlockFromCard}
+                                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer text-center flex items-center justify-center gap-1 ${isSearchedUserBlocked ? 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white' : 'bg-rose-600/10 text-rose-400 hover:bg-rose-600 hover:text-white'}`}
+                              >
+                                <span>{isSearchedUserBlocked ? (lang === 'vi' ? 'Bỏ chặn' : 'Unblock') : (lang === 'vi' ? 'Chặn' : 'Block')}</span>
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

@@ -49,7 +49,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   const [recording, setRecording] = useState(false);
   const [recordTime, setRecordTime] = useState(0);
   const [pinnedExpanded, setPinnedExpanded] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockedByMe, setBlockedByMe] = useState(false);
+  const [blockedByThem, setBlockedByThem] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -241,14 +242,17 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       })
         .then(res => res.json())
         .then(data => {
-          setIsBlocked(data.blocked || false);
+          setBlockedByMe(data.blockedByMe || false);
+          setBlockedByThem(data.blockedByThem || false);
         })
         .catch(err => {
           console.error('Failed to check block status:', err);
-          setIsBlocked(false);
+          setBlockedByMe(false);
+          setBlockedByThem(false);
         });
     } else {
-      setIsBlocked(false);
+      setBlockedByMe(false);
+      setBlockedByThem(false);
     }
   }, [isDirectChat, otherUserId, token, activeConversation]);
 
@@ -264,7 +268,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         body: JSON.stringify({ blockedUserId: otherUserId }),
       });
       if (res.ok) {
-        setIsBlocked(false);
+        setBlockedByMe(false);
         alert('Đã bỏ chặn người dùng thành công!');
         onFriendStatusChange();
       } else {
@@ -374,7 +378,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       </div>
 
       {/* 1.5 Stranger Alert Bar */}
-      {isDirectChat && !isFriend && (
+      {isDirectChat && !isFriend && !blockedByMe && !blockedByThem && (
         <div className="bg-slate-900 border-b border-slate-800/80 px-6 py-3 flex items-center justify-between text-xs text-slate-350 select-none animate-in fade-in duration-200">
           {hasSentRequest ? (
             <span className="font-medium text-slate-300">Bạn đã gửi lời mời kết bạn đến người này. Đang chờ đối phương đồng ý.</span>
@@ -504,7 +508,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                       body: JSON.stringify({ blockedUserId: otherUserId }),
                     });
                     if (res.ok) {
-                      setIsBlocked(true);
+                      setBlockedByMe(true);
                       alert('Đã chặn người dùng thành công!');
                       onFriendStatusChange();
                     } else {
@@ -735,7 +739,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       )}
 
       {/* 5. Input Area / Blocked Banner */}
-      {isBlocked ? (
+      {blockedByMe ? (
         <div className={`p-5 border-t flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 transition-all ${
           theme === 'light' 
             ? 'border-slate-200/80 bg-slate-50 text-slate-700' 
@@ -753,6 +757,17 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           >
             {lang === 'vi' ? 'Bỏ chặn' : 'Unblock'}
           </button>
+        </div>
+      ) : blockedByThem ? (
+        <div className={`p-5 border-t flex items-center gap-2 shrink-0 justify-center transition-all ${
+          theme === 'light' 
+            ? 'border-slate-200/80 bg-slate-50 text-rose-600' 
+            : 'border-slate-800 bg-slate-900/60 text-rose-400'
+        }`}>
+          <IconShield size={18} className="text-rose-500 shrink-0" />
+          <span className="text-xs font-semibold">
+            {lang === 'vi' ? 'Bạn đã bị chặn.' : 'You have been blocked.'}
+          </span>
         </div>
       ) : (
         <div className={`p-4 border-t flex items-center gap-3 shrink-0 transition-colors ${

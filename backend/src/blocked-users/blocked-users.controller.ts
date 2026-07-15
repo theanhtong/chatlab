@@ -40,11 +40,15 @@ export class BlockedUsersController {
     @Param('targetUserId') targetUserId: string,
   ) {
     const userId = req.user.sub;
-    const blocked = await this.blockedUsersService.isBlockedByUser(
+    const blockedByMe = await this.blockedUsersService.isBlockedByUser(
       userId,
       targetUserId,
     );
-    return { blocked };
+    const blockedByThem = await this.blockedUsersService.isBlockedByUser(
+      targetUserId,
+      userId,
+    );
+    return { blockedByMe, blockedByThem };
   }
 
   @Get(':id')
