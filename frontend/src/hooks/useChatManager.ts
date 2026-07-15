@@ -398,7 +398,8 @@ export function useChatManager() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
     const currentTheme = localStorage.getItem('theme');
     const currentLang = localStorage.getItem('lang');
     
@@ -420,6 +421,18 @@ export function useChatManager() {
     setShareTargetMessage(null);
     
     disconnectSocket();
+
+    if (refreshToken) {
+      try {
+        await fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch (err) {
+        console.error('Failed to clear session on backend:', err);
+      }
+    }
   };
 
   const handleSendMessage = (content: string | null, parentId?: string, attachments?: string[], type?: string) => {
