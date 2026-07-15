@@ -12,7 +12,7 @@ export function useChatManager() {
   const [friendsList, setFriendsList] = useState<any[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<any[]>([]);
-  
+
   // Tabs & Navigation states
   const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
   const [incomingRequestsCount, setIncomingRequestsCount] = useState(0);
@@ -297,7 +297,7 @@ export function useChatManager() {
           return prev.map(m => {
             const mTime = new Date(m.createdAt).getTime();
             const isOwnMessageOfViewer = (m.senderId?._id || m.senderId) === data.userId;
-            
+
             if (mTime <= targetTime && !isOwnMessageOfViewer) {
               const currentSeen = m.seenByUserIds || [];
               if (!currentSeen.includes(data.userId)) {
@@ -402,13 +402,13 @@ export function useChatManager() {
     const refreshToken = localStorage.getItem('refreshToken');
     const currentTheme = localStorage.getItem('theme');
     const currentLang = localStorage.getItem('lang');
-    
+
     localStorage.clear();
     sessionStorage.clear();
-    
+
     if (currentTheme) localStorage.setItem('theme', currentTheme);
     if (currentLang) localStorage.setItem('lang', currentLang);
-    
+
     setToken(null);
     setUser(null);
     setActiveConversation(null);
@@ -419,7 +419,7 @@ export function useChatManager() {
     setPinnedMessages([]);
     setReplyToMessage(null);
     setShareTargetMessage(null);
-    
+
     disconnectSocket();
 
     if (refreshToken) {
@@ -583,10 +583,10 @@ export function useChatManager() {
   const isDirectChat = activeConversation?.type === 'direct';
   const otherParticipant = isDirectChat
     ? activeConversation.participants.find((p: any) => {
-        const pId = p.userId?._id || p.userId;
-        const myId = user?._id || user?.id;
-        return pId !== myId;
-      })
+      const pId = p.userId?._id || p.userId;
+      const myId = user?._id || user?.id;
+      return pId !== myId;
+    })
     : null;
   const otherUserId = otherParticipant?.userId?._id || otherParticipant?.userId;
   const isFriendOfConvo = !activeConversation || !isDirectChat || !!(otherUserId && friendsList.some(f => (f._id || f.id) === otherUserId.toString()));

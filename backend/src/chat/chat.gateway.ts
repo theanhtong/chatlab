@@ -14,6 +14,7 @@ import { UsersService } from '../users/users.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { MessagesService } from '../messages/messages.service';
 import { MessageReceiptsService } from '../message-receipts/message-receipts.service';
+import { BlockedUsersService } from '../blocked-users/blocked-users.service';
 import { SocketEvent } from './enums/socket-event.enum';
 import {
   Logger,
@@ -42,6 +43,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly conversationsService: ConversationsService,
     private readonly messagesService: MessagesService,
     private readonly messageReceiptsService: MessageReceiptsService,
+    private readonly blockedUsersService: BlockedUsersService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -205,6 +207,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         conversationId = conversation._id.toString();
       }
 
+      const conversation =
+        await this.conversationsService.findById(conversationId);
+      if (!conversation) {
+        throw new BadRequestException('Conversation not found');
+      }
+
+      // Check if blocked
+      if (conversation.type === 'direct') {
+        const otherParticipant = conversation.participants.find(
+          (p) => p.userId.toString() !== senderId,
+        );
+        if (otherParticipant) {
+          const isBlocked = await this.blockedUsersService.isBlocked(
+            senderId,
+            otherParticipant.userId.toString(),
+          );
+          if (isBlocked) {
+            throw new BadRequestException(
+              'Cannot send message. One of the users has blocked the other.',
+            );
+          }
+        }
+      }
+
       const message = await this.messagesService.createMessage(
         conversationId,
         senderId,
@@ -214,17 +240,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.parentId,
       );
 
-      const conversation =
-        await this.conversationsService.findById(conversationId);
-      if (conversation) {
-        conversation.participants.forEach((p) => {
-          this.sendToUser(
-            p.userId.toString(),
-            SocketEvent.NEW_MESSAGE,
-            message,
-          );
-        });
-      }
+      conversation.participants.forEach((p) => {
+        this.sendToUser(
+          p.userId.toString(),
+          SocketEvent.NEW_MESSAGE,
+          message,
+        );
+      });
 
       return { status: 'ok', conversationId, message };
     } catch (error) {
