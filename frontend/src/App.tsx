@@ -54,6 +54,9 @@ function App() {
     toggleTheme,
     lang,
     toggleLang,
+    blockedByMe,
+    setBlockedByMe,
+    blockedByThem,
   } = useChatManager();
 
   if (!token || !user) {
@@ -138,6 +141,9 @@ function App() {
           }}
           lang={lang}
           theme={theme}
+          blockedByMe={blockedByMe}
+          setBlockedByMe={setBlockedByMe}
+          blockedByThem={blockedByThem}
         />
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-505 text-slate-500 bg-slate-950">
@@ -162,6 +168,7 @@ function App() {
           onRevoke={() => handleRevokeMessage(contextMenu.message._id)}
           onTogglePin={() => handleTogglePinMessage(contextMenu.message._id, !contextMenu.message.isPinned)}
           isFriend={isFriendOfConvo}
+          isBlocked={blockedByMe || blockedByThem}
         />
       )}
 

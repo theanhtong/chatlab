@@ -24,6 +24,9 @@ interface ChatAreaProps {
   onFriendStatusChange: () => void;
   lang: 'vi' | 'en';
   theme: 'light' | 'dark';
+  blockedByMe: boolean;
+  setBlockedByMe: (val: boolean) => void;
+  blockedByThem: boolean;
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
@@ -43,14 +46,15 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onFriendStatusChange,
   lang,
   theme,
+  blockedByMe,
+  setBlockedByMe,
+  blockedByThem,
 }) => {
   const [inputText, setInputText] = useState('');
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordTime, setRecordTime] = useState(0);
   const [pinnedExpanded, setPinnedExpanded] = useState(false);
-  const [blockedByMe, setBlockedByMe] = useState(false);
-  const [blockedByThem, setBlockedByThem] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -233,28 +237,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     return senderId === otherUserId.toString();
   });
   const hasReceivedRequest = !!incomingRequestObj;
-
-  // Check block status when conversation or target user changes
-  useEffect(() => {
-    if (isDirectChat && otherUserId && token) {
-      fetch(`${API_URL}/blocked-users/check/${otherUserId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(res => res.json())
-        .then(data => {
-          setBlockedByMe(data.blockedByMe || false);
-          setBlockedByThem(data.blockedByThem || false);
-        })
-        .catch(err => {
-          console.error('Failed to check block status:', err);
-          setBlockedByMe(false);
-          setBlockedByThem(false);
-        });
-    } else {
-      setBlockedByMe(false);
-      setBlockedByThem(false);
-    }
-  }, [isDirectChat, otherUserId, token, activeConversation]);
 
   const handleUnblockUser = async () => {
     if (!otherUserId) return;

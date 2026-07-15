@@ -69,7 +69,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [subMenuOpen, setSubMenuOpen] = useState(false);
 
   // Friends Pane local states
-  const [friendsSubTab, setFriendsSubTab] = useState<'list' | 'incoming' | 'outgoing'>('list');
+  const [friendsSubTab, setFriendsSubTab] = useState<'list' | 'incoming' | 'outgoing' | 'blocked'>('list');
+  const [blockedList, setBlockedList] = useState<any[]>([]);
   const [addPhone, setAddPhone] = useState('');
   const [addLoading, setAddLoading] = useState(false);
   const [addMessage, setAddMessage] = useState<{ text: string; isError: boolean } | null>(null);
@@ -122,6 +123,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       if (outRes.ok) {
         const outData = await outRes.json();
         setOutgoingRequests(outData);
+      }
+
+      // 4. Blocked Users list
+      const blockRes = await fetch(`${API_URL}/blocked-users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (blockRes.ok) {
+        const blockData = await blockRes.json();
+        setBlockedList(blockData);
       }
     } catch (err) {
       console.error('Error fetching friends data:', err);
@@ -900,6 +910,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 {lang === 'vi' ? 'Đã gửi' : 'Sent'} ({outgoingRequests.length})
               </button>
+              <button
+                onClick={() => setFriendsSubTab('blocked')}
+                className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 ${friendsSubTab === 'blocked'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+              >
+                {lang === 'vi' ? 'Đã chặn' : 'Blocked'} ({blockedList.length})
+              </button>
             </div>
 
             {/* List panel */}
@@ -1046,6 +1065,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               title={lang === 'vi' ? 'Thu hồi yêu cầu kết bạn' : 'Cancel request'}
                             >
                               {lang === 'vi' ? 'Thu hồi' : 'Cancel'}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )
+                  )}
+
+                  {/* Blocked Users List */}
+                  {friendsSubTab === 'blocked' && (
+                    blockedList.length === 0 ? (
+                      <p className="text-center text-xs text-slate-500 py-12">
+                        {lang === 'vi' ? 'Chưa chặn người dùng nào' : 'No blocked users'}
+                      </p>
+                    ) : (
+                      blockedList.map(blockedUser => {
+                        return (
+                          <div key={blockedUser._id} className="flex items-center justify-between p-2 bg-slate-850/30 border border-slate-850/50 rounded-xl">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs overflow-hidden shrink-0">
+                                {blockedUser.avatar ? (
+                                  <img src={blockedUser.avatar} alt={blockedUser.displayName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span>{blockedUser.displayName ? blockedUser.displayName.slice(0, 2).toUpperCase() : 'BL'}</span>
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-200 truncate">{blockedUser.displayName || blockedUser.username}</p>
+                                <p className="text-[9px] text-slate-500 truncate mt-0.5">{blockedUser.phone}</p>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={async () => {
+                                if (!confirm(lang === 'vi' ? 'Bạn có chắc chắn muốn bỏ chặn người dùng này không?' : 'Are you sure you want to unblock this user?')) return;
+                                try {
+                                  const res = await fetch(`${API_URL}/blocked-users/unblock`, {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({ blockedUserId: blockedUser._id }),
+                                  });
+                                  if (res.ok) {
+                                    alert(lang === 'vi' ? 'Đã bỏ chặn thành công!' : 'Unblocked successfully!');
+                                    fetchFriendsData();
+                                  } else {
+                                    alert(lang === 'vi' ? 'Bỏ chặn thất bại.' : 'Failed to unblock.');
+                                  }
+                                } catch (err) {
+                                  alert(lang === 'vi' ? 'Lỗi khi bỏ chặn.' : 'Error unblocking.');
+                                }
+                              }}
+                              className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 rounded-lg text-[10px] font-bold transition-all cursor-pointer shrink-0"
+                            >
+                              {lang === 'vi' ? 'Bỏ chặn' : 'Unblock'}
                             </button>
                           </div>
                         );

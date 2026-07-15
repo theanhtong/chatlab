@@ -51,6 +51,12 @@ export class BlockedUsersController {
     return { blockedByMe, blockedByThem };
   }
 
+  @Get()
+  async getBlockedUsers(@Req() req: any) {
+    const userId = req.user.sub;
+    return this.blockedUsersService.findBlockedUsers(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.blockedUsersService.findOne(id);

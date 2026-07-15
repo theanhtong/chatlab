@@ -594,6 +594,30 @@ export function useChatManager() {
   const [theme, setTheme] = useState<'light' | 'dark'>((localStorage.getItem('theme') as any) || 'light');
   const [lang, setLang] = useState<'vi' | 'en'>((localStorage.getItem('lang') as any) || 'vi');
 
+  const [blockedByMe, setBlockedByMe] = useState(false);
+  const [blockedByThem, setBlockedByThem] = useState(false);
+
+  useEffect(() => {
+    if (isDirectChat && otherUserId && token) {
+      fetch(`${API_URL}/blocked-users/check/${otherUserId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          setBlockedByMe(data.blockedByMe || false);
+          setBlockedByThem(data.blockedByThem || false);
+        })
+        .catch(err => {
+          console.error('Failed to check block status:', err);
+          setBlockedByMe(false);
+          setBlockedByThem(false);
+        });
+    } else {
+      setBlockedByMe(false);
+      setBlockedByThem(false);
+    }
+  }, [isDirectChat, otherUserId, token, activeConversation]);
+
   useEffect(() => {
     document.body.className = theme === 'light' ? 'light' : '';
   }, [theme]);
@@ -656,6 +680,10 @@ export function useChatManager() {
     toggleTheme,
     lang,
     toggleLang,
+    blockedByMe,
+    setBlockedByMe,
+    blockedByThem,
+    setBlockedByThem,
   };
 }
 

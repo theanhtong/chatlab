@@ -85,4 +85,19 @@ export class BlockedUsersService {
       .findByIdAndDelete(new Types.ObjectId(id))
       .exec();
   }
+
+  async findBlockedUsers(userId: string): Promise<any[]> {
+    const blocks = await this.blockedUserModel
+      .find({ userId: new Types.ObjectId(userId) })
+      .populate({
+        path: 'blockedUserId',
+        model: 'User',
+        select: '_id username displayName avatar phone',
+      })
+      .exec();
+    
+    return blocks
+      .map(b => b.blockedUserId)
+      .filter(u => !!u);
+  }
 }
