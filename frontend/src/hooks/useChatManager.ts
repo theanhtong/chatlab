@@ -399,11 +399,26 @@ export function useChatManager() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    const currentTheme = localStorage.getItem('theme');
+    const currentLang = localStorage.getItem('lang');
+    
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    if (currentTheme) localStorage.setItem('theme', currentTheme);
+    if (currentLang) localStorage.setItem('lang', currentLang);
+    
     setToken(null);
     setUser(null);
     setActiveConversation(null);
+    setConversations([]);
+    setFriendsList([]);
+    setIncomingRequests([]);
+    setOutgoingRequests([]);
+    setPinnedMessages([]);
+    setReplyToMessage(null);
+    setShareTargetMessage(null);
+    
     disconnectSocket();
   };
 

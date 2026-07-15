@@ -281,6 +281,62 @@ export const Login: React.FC<LoginProps> = ({
             {isRegister ? t.toggleLogin : t.toggleRegister}
           </button>
         </div>
+
+        {!isRegister && (
+          <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800/80 space-y-3">
+            <p className={`text-[10px] font-bold uppercase tracking-wider text-center ${
+              theme === 'light' ? 'text-slate-400' : 'text-slate-500'
+            }`}>
+              {lang === 'vi' ? 'Đăng nhập nhanh tài khoản test' : 'Quick Login (Test Accounts)'}
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {[
+                { name: 'Admin', user: 'admin' },
+                { name: 'User 1', user: 'user1' },
+                { name: 'User 2', user: 'user2' }
+              ].map(acc => (
+                <button
+                  key={acc.user}
+                  type="button"
+                  onClick={async () => {
+                    setUsername(acc.user);
+                    setPassword('password123');
+                    setLoading(true);
+                    setError('');
+                    try {
+                      const response = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: acc.user, password: 'password123' }),
+                      });
+                      const data = await response.json();
+                      if (!response.ok) {
+                        throw new Error(data.message || t.failAuth);
+                      }
+                      localStorage.setItem('token', data.accessToken);
+                      if (data.refreshToken) {
+                        localStorage.setItem('refreshToken', data.refreshToken);
+                      }
+                      localStorage.setItem('user', JSON.stringify(data.user || { username: acc.user }));
+                      onLoginSuccess(data.accessToken, data.user || { username: acc.user });
+                    } catch (err: any) {
+                      setError(err.message || t.generalError);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    theme === 'light'
+                      ? 'bg-blue-50/50 hover:bg-blue-50 text-blue-600 border-blue-100/70'
+                      : 'bg-blue-950/20 hover:bg-blue-950/40 text-blue-400 border-blue-900/30'
+                  }`}
+                >
+                  {acc.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
