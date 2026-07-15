@@ -4,7 +4,7 @@ import {
   IconMessage, IconLogout, IconSettings, IconSearch,
   IconPin, IconDotsVertical, IconUsers, IconUserPlus,
   IconCheck, IconX, IconUserMinus, IconMessageCircle2,
-  IconUser, IconChevronRight, IconTrash, IconShield
+  IconUser, IconChevronRight, IconTrash, IconShield, IconUserCancel
 } from '@tabler/icons-react';
 
 interface SidebarProps {
@@ -16,8 +16,8 @@ interface SidebarProps {
   onLogout: () => void;
   onTogglePin: (cId: string, pin: boolean) => void;
   onDeleteConversation: (cId: string) => void;
-  activeTab: 'chats' | 'friends';
-  setActiveTab: (tab: 'chats' | 'friends') => void;
+  activeTab: 'chats' | 'friends' | 'blocked';
+  setActiveTab: (tab: 'chats' | 'friends' | 'blocked') => void;
   incomingRequestsCount: number;
   setIncomingRequestsCount: (count: number) => void;
   onStartDirectChat: (targetUserId: string) => void;
@@ -141,7 +141,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   useEffect(() => {
-    if (activeTab === 'friends' && token) {
+    if ((activeTab === 'friends' || activeTab === 'blocked') && token) {
       fetchFriendsData();
     }
   }, [activeTab, token]);
@@ -488,6 +488,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {incomingRequestsCount}
               </span>
             )}
+          </button>
+
+          {/* Blocked Icon Tab */}
+          <button
+            onClick={() => setActiveTab('blocked')}
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors relative ${activeTab === 'blocked'
+                ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400')
+                : (theme === 'light' ? 'text-slate-550 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200')
+              }`}
+            title={lang === 'vi' ? 'Đã chặn' : 'Blocked'}
+          >
+            <IconUserCancel size={22} />
           </button>
         </div>
 
@@ -908,15 +920,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 {lang === 'vi' ? 'Đã gửi' : 'Sent'} ({outgoingRequests.length})
               </button>
-              <button
-                onClick={() => setFriendsSubTab('blocked')}
-                className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 ${friendsSubTab === 'blocked'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-              >
-                {lang === 'vi' ? 'Đã chặn' : 'Blocked'} ({blockedList.length})
-              </button>
             </div>
 
             {/* List panel */}
@@ -1069,63 +1072,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       })
                     )
                   )}
-
-                  {/* Blocked Users List */}
-                  {friendsSubTab === 'blocked' && (
-                    blockedList.length === 0 ? (
-                      <p className="text-center text-xs text-slate-500 py-12">
-                        {lang === 'vi' ? 'Chưa chặn người dùng nào' : 'No blocked users'}
-                      </p>
-                    ) : (
-                      blockedList.map(blockedUser => {
-                        return (
-                          <div key={blockedUser._id} className="flex items-center justify-between p-2 bg-slate-850/30 border border-slate-850/50 rounded-xl">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs overflow-hidden shrink-0">
-                                {blockedUser.avatar ? (
-                                  <img src={blockedUser.avatar} alt={blockedUser.displayName} className="w-full h-full object-cover" />
-                                ) : (
-                                  <span>{blockedUser.displayName ? blockedUser.displayName.slice(0, 2).toUpperCase() : 'BL'}</span>
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs font-bold text-slate-200 truncate">{blockedUser.displayName || blockedUser.username}</p>
-                                <p className="text-[9px] text-slate-500 truncate mt-0.5">{blockedUser.phone}</p>
-                              </div>
-                            </div>
-
-                            <button
-                              onClick={async () => {
-                                if (!confirm(lang === 'vi' ? 'Bạn có chắc chắn muốn bỏ chặn người dùng này không?' : 'Are you sure you want to unblock this user?')) return;
-                                try {
-                                  const res = await fetch(`${API_URL}/blocked-users/unblock`, {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'Authorization': `Bearer ${token}`
-                                    },
-                                    body: JSON.stringify({ blockedUserId: blockedUser._id }),
-                                  });
-                                  if (res.ok) {
-                                    alert(lang === 'vi' ? 'Đã bỏ chặn thành công!' : 'Unblocked successfully!');
-                                    fetchFriendsData();
-                                  } else {
-                                    alert(lang === 'vi' ? 'Bỏ chặn thất bại.' : 'Failed to unblock.');
-                                  }
-                                } catch (err) {
-                                  alert(lang === 'vi' ? 'Lỗi khi bỏ chặn.' : 'Error unblocking.');
-                                }
-                              }}
-                              className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-lg text-[10px] font-bold transition-all cursor-pointer shrink-0"
-                            >
-                              {lang === 'vi' ? 'Bỏ chặn' : 'Unblock'}
-                            </button>
-                          </div>
-                        );
-                      })
-                    )
-                  )}
                 </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* BLOCKED TAB PANELS */}
+        {activeTab === 'blocked' && (
+          <div className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-right-3 duration-200">
+            {/* Header: Title */}
+            <div className="h-16 border-b border-slate-200/50 dark:border-slate-800/80 flex items-center px-4 shrink-0">
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                {lang === 'vi' ? 'Danh sách đã chặn' : 'Blocked Users'} ({blockedList.length})
+              </h2>
+            </div>
+
+            {/* List panel */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1.5 min-h-0">
+              {loadingFriends ? (
+                <p className="text-center text-xs text-slate-500 py-12">{lang === 'vi' ? 'Đang tải...' : 'Loading...'}</p>
+              ) : blockedList.length === 0 ? (
+                <p className="text-center text-xs text-slate-500 py-12">
+                  {lang === 'vi' ? 'Chưa chặn người dùng nào' : 'No blocked users'}
+                </p>
+              ) : (
+                blockedList.map(blockedUser => {
+                  return (
+                    <div key={blockedUser._id} className="flex items-center justify-between p-2 bg-slate-850/30 border border-slate-850/50 rounded-xl">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs overflow-hidden shrink-0">
+                          {blockedUser.avatar ? (
+                            <img src={blockedUser.avatar} alt={blockedUser.displayName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span>{blockedUser.displayName ? blockedUser.displayName.slice(0, 2).toUpperCase() : 'BL'}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-200 truncate">{blockedUser.displayName || blockedUser.username}</p>
+                          <p className="text-[9px] text-slate-500 truncate mt-0.5">{blockedUser.phone}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={async () => {
+                          if (!confirm(lang === 'vi' ? 'Bạn có chắc chắn muốn bỏ chặn người dùng này không?' : 'Are you sure you want to unblock this user?')) return;
+                          try {
+                            const res = await fetch(`${API_URL}/blocked-users/unblock`, {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ blockedUserId: blockedUser._id }),
+                            });
+                            if (res.ok) {
+                              alert(lang === 'vi' ? 'Đã bỏ chặn thành công!' : 'Unblocked successfully!');
+                              fetchFriendsData();
+                            } else {
+                              alert(lang === 'vi' ? 'Bỏ chặn thất bại.' : 'Failed to unblock.');
+                            }
+                          } catch (err) {
+                            alert(lang === 'vi' ? 'Lỗi khi bỏ chặn.' : 'Error unblocking.');
+                          }
+                        }}
+                        className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-lg text-[10px] font-bold transition-all cursor-pointer shrink-0"
+                      >
+                        {lang === 'vi' ? 'Bỏ chặn' : 'Unblock'}
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>

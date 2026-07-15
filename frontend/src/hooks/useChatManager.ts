@@ -14,7 +14,7 @@ export function useChatManager() {
   const [outgoingRequests, setOutgoingRequests] = useState<any[]>([]);
 
   // Tabs & Navigation states
-  const [activeTab, setActiveTab] = useState<'chats' | 'friends'>('chats');
+  const [activeTab, setActiveTab] = useState<'chats' | 'friends' | 'blocked'>('chats');
   const [incomingRequestsCount, setIncomingRequestsCount] = useState(0);
 
   // Modals & Menu states

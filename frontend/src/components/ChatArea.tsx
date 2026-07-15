@@ -735,7 +735,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
           </div>
           <button
             onClick={handleUnblockUser}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+            className="px-4 py-2 bg-rose-500/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 font-bold rounded-xl text-xs transition-all cursor-pointer shrink-0"
           >
             {lang === 'vi' ? 'Bỏ chặn' : 'Unblock'}
           </button>
