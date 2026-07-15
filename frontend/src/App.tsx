@@ -137,6 +137,7 @@ function App() {
             fetchConversations(token);
           }}
           lang={lang}
+          theme={theme}
         />
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-505 text-slate-500 bg-slate-950">

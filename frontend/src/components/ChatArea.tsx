@@ -23,6 +23,7 @@ interface ChatAreaProps {
   outgoingRequests: any[];
   onFriendStatusChange: () => void;
   lang: 'vi' | 'en';
+  theme: 'light' | 'dark';
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
@@ -41,6 +42,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   outgoingRequests,
   onFriendStatusChange,
   lang,
+  theme,
 }) => {
   const [inputText, setInputText] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -661,16 +663,26 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
 
       {/* 4. Reply Target Indicator Header */}
       {replyToMessage && (
-        <div className="px-6 py-2 border-t border-slate-850 bg-slate-900/40 flex items-center justify-between text-xs text-slate-400 shrink-0">
+        <div className={`px-6 py-2.5 border-t flex items-center justify-between text-xs transition-all shrink-0 ${
+          theme === 'light' 
+            ? 'border-blue-100/50 bg-blue-50/40 text-slate-600' 
+            : 'border-slate-850 bg-slate-950/40 text-slate-400'
+        }`}>
           <div className="flex items-center gap-2 truncate">
-            <span className="text-blue-400 font-semibold shrink-0">{lang === 'vi' ? 'Đang trả lời:' : 'Replying to:'}</span>
-            <span className="truncate italic">
+            <span className="text-blue-600 dark:text-blue-400 font-semibold shrink-0">
+              {lang === 'vi' ? 'Đang trả lời:' : 'Replying to:'}
+            </span>
+            <span className={`truncate italic ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>
               "{replyToMessage.content || (lang === 'vi' ? '[Tệp tin / Media]' : '[File / Media]')}"
             </span>
           </div>
           <button
             onClick={onClearReply}
-            className="p-1 hover:bg-slate-800 rounded text-slate-400 cursor-pointer"
+            className={`p-1 rounded cursor-pointer transition-colors ${
+              theme === 'light' 
+                ? 'hover:bg-blue-100/70 text-slate-400 hover:text-slate-600' 
+                : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
           >
             <IconX size={14} />
           </button>
