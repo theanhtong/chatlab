@@ -34,75 +34,70 @@ export function useChatManager() {
     let activeRefreshPromise: Promise<string | null> | null = null;
 
     window.fetch = async function (input, init) {
-      let response = await originalFetch(input, init);
+      const newInit = init ? { ...init } : {};
+      if (!newInit.credentials) {
+        newInit.credentials = 'include';
+      }
+
+      let response = await originalFetch(input, newInit);
 
       const urlStr = typeof input === 'string' ? input : (input as any).url || '';
 
       if (response.status === 401 && !urlStr.includes('/auth/refresh') && !urlStr.includes('/auth/login') && !urlStr.includes('/auth/register')) {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          if (!activeRefreshPromise) {
-            activeRefreshPromise = (async () => {
-              try {
-                const refreshRes = await originalFetch(`${API_URL}/auth/refresh`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ refreshToken }),
-                });
+        if (!activeRefreshPromise) {
+          activeRefreshPromise = (async () => {
+            try {
+              const refreshRes = await originalFetch(`${API_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+              });
 
-                if (refreshRes.ok) {
-                  const refreshData = await refreshRes.json();
-                  const newAccessToken = refreshData.accessToken;
-                  const newRefreshToken = refreshData.refreshToken;
-
-                  localStorage.setItem('token', newAccessToken);
-                  if (newRefreshToken) {
-                    localStorage.setItem('refreshToken', newRefreshToken);
-                  }
-                  return newAccessToken;
-                }
-              } catch (e) {
-                console.error('Failed refreshing token:', e);
+              if (refreshRes.ok) {
+                const refreshData = await refreshRes.json();
+                const newAccessToken = refreshData.accessToken;
+                localStorage.setItem('token', newAccessToken);
+                return newAccessToken;
               }
-              return null;
-            })();
-          }
+            } catch (e) {
+              console.error('Failed refreshing token:', e);
+            }
+            return null;
+          })();
+        }
 
-          const newAccessToken = await activeRefreshPromise;
-          // Reset the active refresh promise once completed
-          activeRefreshPromise = null;
+        const newAccessToken = await activeRefreshPromise;
+        activeRefreshPromise = null;
 
-          if (newAccessToken) {
-            setToken(newAccessToken);
+        if (newAccessToken) {
+          setToken(newAccessToken);
 
-            const newInit = { ...init };
-            const authHeader = `Bearer ${newAccessToken}`;
-            if (newInit.headers) {
-              if (newInit.headers instanceof Headers) {
-                newInit.headers.set('Authorization', authHeader);
-              } else if (Array.isArray(newInit.headers)) {
-                const authIdx = newInit.headers.findIndex(h => h[0].toLowerCase() === 'authorization');
-                if (authIdx !== -1) {
-                  newInit.headers[authIdx][1] = authHeader;
-                } else {
-                  newInit.headers.push(['Authorization', authHeader]);
-                }
+          const retryInit = { ...newInit };
+          const authHeader = `Bearer ${newAccessToken}`;
+          if (retryInit.headers) {
+            if (retryInit.headers instanceof Headers) {
+              retryInit.headers.set('Authorization', authHeader);
+            } else if (Array.isArray(retryInit.headers)) {
+              const authIdx = retryInit.headers.findIndex(h => h[0].toLowerCase() === 'authorization');
+              if (authIdx !== -1) {
+                retryInit.headers[authIdx][1] = authHeader;
               } else {
-                (newInit.headers as any)['Authorization'] = authHeader;
+                retryInit.headers.push(['Authorization', authHeader]);
               }
             } else {
-              newInit.headers = { 'Authorization': authHeader };
+              (retryInit.headers as any)['Authorization'] = authHeader;
             }
-
-            return originalFetch(input, newInit);
           } else {
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-            setToken(null);
-            setUser(null);
-            disconnectSocket();
+            retryInit.headers = { 'Authorization': authHeader };
           }
+
+          return originalFetch(input, retryInit);
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+          disconnectSocket();
         }
       }
 
@@ -175,7 +170,6 @@ export function useChatManager() {
             fetchFriendRequests(savedToken);
           } else {
             localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
             setToken(null);
             setUser(null);
@@ -399,7 +393,6 @@ export function useChatManager() {
   };
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
     const currentTheme = localStorage.getItem('theme');
     const currentLang = localStorage.getItem('lang');
 
@@ -422,16 +415,13 @@ export function useChatManager() {
 
     disconnectSocket();
 
-    if (refreshToken) {
-      try {
-        await fetch(`${API_URL}/auth/logout`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken }),
-        });
-      } catch (err) {
-        console.error('Failed to clear session on backend:', err);
-      }
+    try {
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (err) {
+      console.error('Failed to clear session on backend:', err);
     }
   };
 

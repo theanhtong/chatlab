@@ -84,9 +84,6 @@ export const Login: React.FC<LoginProps> = ({
         setError(t.successRegister);
       } else {
         localStorage.setItem('token', data.accessToken);
-        if (data.refreshToken) {
-          localStorage.setItem('refreshToken', data.refreshToken);
-        }
         localStorage.setItem('user', JSON.stringify(data.user || { username }));
         onLoginSuccess(data.accessToken, data.user || { username });
       }
@@ -314,9 +311,6 @@ export const Login: React.FC<LoginProps> = ({
                         throw new Error(data.message || t.failAuth);
                       }
                       localStorage.setItem('token', data.accessToken);
-                      if (data.refreshToken) {
-                        localStorage.setItem('refreshToken', data.refreshToken);
-                      }
                       localStorage.setItem('user', JSON.stringify(data.user || { username: acc.user }));
                       onLoginSuccess(data.accessToken, data.user || { username: acc.user });
                     } catch (err: any) {
