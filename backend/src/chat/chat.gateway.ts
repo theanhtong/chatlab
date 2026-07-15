@@ -207,6 +207,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         conversationId = conversation._id.toString();
       }
 
+      if (!conversationId) {
+        throw new BadRequestException('Conversation ID is required');
+      }
+
       const conversation =
         await this.conversationsService.findById(conversationId);
       if (!conversation) {

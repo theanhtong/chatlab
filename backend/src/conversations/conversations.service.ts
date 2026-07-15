@@ -38,7 +38,7 @@ export class ConversationsService {
   async findOrCreateDirect(
     userId1: string,
     userId2: string,
-  ): Promise<ConversationDocument> {
+  ): Promise<any> {
     if (userId1 === userId2) {
       throw new BadRequestException(
         'Cannot start a conversation with yourself',
@@ -62,7 +62,11 @@ export class ConversationsService {
       .exec();
 
     if (existing) {
-      return existing;
+      return existing.populate({
+        path: 'participants.userId',
+        model: 'User',
+        select: '_id username displayName avatar isOnline lastActiveAt phone',
+      });
     }
 
     const newConversation = new this.conversationModel({
@@ -73,7 +77,12 @@ export class ConversationsService {
       ],
     });
 
-    return newConversation.save();
+    const saved = await newConversation.save();
+    return saved.populate({
+      path: 'participants.userId',
+      model: 'User',
+      select: '_id username displayName avatar isOnline lastActiveAt phone',
+    });
   }
 
   async createGroup(
