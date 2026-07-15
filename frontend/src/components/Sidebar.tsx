@@ -451,11 +451,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               setActiveTab('chats');
               setSearchedUser(null);
             }}
-            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${
-              activeTab === 'chats' 
-                ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400') 
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${activeTab === 'chats'
+                ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400')
                 : (theme === 'light' ? 'text-slate-550 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200')
-            }`}
+              }`}
             title="Tin nhắn"
           >
             <IconMessage size={22} />
@@ -464,11 +463,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Friends Icon Tab */}
           <button
             onClick={() => setActiveTab('friends')}
-            className={`p-2.5 rounded-xl cursor-pointer transition-colors relative ${
-              activeTab === 'friends' 
-                ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400') 
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors relative ${activeTab === 'friends'
+                ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400')
                 : (theme === 'light' ? 'text-slate-550 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200')
-            }`}
+              }`}
             title="Danh bạ"
           >
             <IconUsers size={22} />
@@ -489,11 +487,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 e.stopPropagation();
                 setSettingsMenuOpen(!settingsMenuOpen);
               }}
-              className={`p-2.5 rounded-xl cursor-pointer transition-colors ${
-                settingsMenuOpen 
-                  ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400') 
+              className={`p-2.5 rounded-xl cursor-pointer transition-colors ${settingsMenuOpen
+                  ? (theme === 'light' ? 'bg-blue-50 text-blue-600 border border-blue-100/55' : 'bg-slate-800 text-blue-400')
                   : (theme === 'light' ? 'text-slate-550 text-slate-500 hover:bg-slate-200/80 hover:text-slate-800' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200')
-              }`}
+                }`}
               title="Cài đặt"
             >
               <IconSettings size={22} />
@@ -588,11 +585,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Logout Button */}
           <button
             onClick={onLogout}
-            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${
-              theme === 'light' 
-                ? 'text-rose-500 hover:bg-rose-50 hover:text-rose-600' 
+            className={`p-2.5 rounded-xl cursor-pointer transition-colors ${theme === 'light'
+                ? 'text-rose-500 hover:bg-rose-50 hover:text-rose-600'
                 : 'text-rose-400 hover:bg-rose-500/10 hover:text-rose-300'
-            }`}
+              }`}
             title={lang === 'vi' ? 'Đăng xuất' : 'Logout'}
           >
             <IconLogout size={22} />
@@ -686,7 +682,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setMenuPosition({ x: rect.left, y: rect.bottom + window.scrollY });
                               setActiveMenuId(c._id);
                             }}
-                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-blue-500 dark:text-blue-400 transition-colors cursor-pointer shrink-0"
+                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-500 dark:text-blue-400 transition-all cursor-pointer shrink-0"
                             title="Tùy chọn ghim"
                           >
                             <IconPin size={13} className="rotate-45" />
@@ -701,7 +697,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setMenuPosition({ x: rect.left, y: rect.bottom + window.scrollY });
                               setActiveMenuId(c._id);
                             }}
-                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all cursor-pointer shrink-0 opacity-0 group-hover:opacity-100"
+                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all cursor-pointer shrink-0 opacity-60 hover:opacity-100"
                             title="Thêm tùy chọn"
                           >
                             <IconDotsVertical size={13} />
@@ -850,8 +846,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => setFriendsSubTab('list')}
                 className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 ${friendsSubTab === 'list'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
               >
                 {lang === 'vi' ? 'Bạn bè' : 'Friends'} ({friendsList.length})
@@ -859,8 +855,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => setFriendsSubTab('incoming')}
                 className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 relative ${friendsSubTab === 'incoming'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
               >
                 {lang === 'vi' ? 'Lời mời' : 'Requests'} ({incomingRequests.length})
@@ -871,8 +867,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => setFriendsSubTab('outgoing')}
                 className={`py-3 text-[11px] font-bold tracking-wider uppercase cursor-pointer transition-all border-b-2 ${friendsSubTab === 'outgoing'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
               >
                 {lang === 'vi' ? 'Đã gửi' : 'Sent'} ({outgoingRequests.length})
