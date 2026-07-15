@@ -375,8 +375,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     return (
-      <span className="text-[11px] text-slate-400 truncate block mt-0.5 max-w-[245px]">
-        <span className="font-semibold text-slate-300">{senderPrefix}</span>
+      <span className={`text-[11px] truncate block mt-0.5 max-w-[245px] ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
+        <span className={`font-semibold ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'}`}>{senderPrefix}</span>
         {messageText}
       </span>
     );
@@ -649,11 +649,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div
                       key={c._id}
                       onClick={() => onSelectConversation(c)}
-                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border relative group ${isActive ? 'bg-blue-600/10 border-blue-500/20 text-white' : 'border-transparent text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'}`}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border relative group ${
+                        isActive
+                          ? theme === 'light'
+                            ? 'bg-blue-50 border-blue-100 text-blue-600'
+                            : 'bg-blue-600/10 border-blue-500/20 text-white'
+                          : theme === 'light'
+                            ? 'border-transparent text-slate-700 hover:bg-blue-50/50 hover:text-blue-600'
+                            : 'border-transparent text-slate-400 hover:bg-slate-800/40 hover:text-slate-200'
+                      }`}
                     >
                       {/* Room Avatar */}
                       <div className="relative shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center font-bold text-xs overflow-hidden text-slate-300">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs overflow-hidden border transition-all ${
+                          theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-slate-800 border-slate-700/50 text-slate-300'
+                        }`}>
                           {details.avatar ? (
                             <img src={details.avatar} alt={details.name} className="w-full h-full object-cover" />
                           ) : (
@@ -662,13 +672,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                         {/* Dynamic Activity status indicator */}
                         {c.type === 'direct' && isOnline && (
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full animate-pulse" />
+                          <span className={`absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 rounded-full animate-pulse ${
+                            theme === 'light' ? 'border-white' : 'border-slate-900'
+                          }`} />
                         )}
                       </div>
 
                       {/* Room details */}
                       <div className="flex-1 flex flex-col justify-center min-w-0 pr-6">
-                        <span className="text-sm font-semibold truncate text-slate-200">{details.name}</span>
+                        <span className={`text-sm font-semibold truncate ${
+                          isActive
+                            ? theme === 'light' ? 'text-blue-600' : 'text-slate-200'
+                            : theme === 'light' ? 'text-slate-800' : 'text-slate-200'
+                        }`}>{details.name}</span>
                         {renderLastMessagePreview(c)}
                       </div>
 
@@ -682,7 +698,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setMenuPosition({ x: rect.left, y: rect.bottom + window.scrollY });
                               setActiveMenuId(c._id);
                             }}
-                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-500 dark:text-blue-400 transition-all cursor-pointer shrink-0"
+                            className="p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-500 dark:text-blue-400 transition-all cursor-pointer shrink-0"
                             title="Tùy chọn ghim"
                           >
                             <IconPin size={13} className="rotate-45" />
@@ -697,7 +713,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setMenuPosition({ x: rect.left, y: rect.bottom + window.scrollY });
                               setActiveMenuId(c._id);
                             }}
-                            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all cursor-pointer shrink-0 opacity-60 hover:opacity-100"
+                            className="p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all cursor-pointer shrink-0 opacity-60 hover:opacity-100"
                             title="Thêm tùy chọn"
                           >
                             <IconDotsVertical size={13} />
