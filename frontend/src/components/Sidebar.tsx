@@ -686,7 +686,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setMenuPosition({ x: rect.left, y: rect.bottom + window.scrollY });
                               setActiveMenuId(c._id);
                             }}
-                            className="p-1 rounded hover:bg-slate-700 text-blue-400 transition-colors cursor-pointer shrink-0"
+                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-blue-500 dark:text-blue-400 transition-colors cursor-pointer shrink-0"
                             title="Tùy chọn ghim"
                           >
                             <IconPin size={13} className="rotate-45" />
@@ -701,7 +701,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setMenuPosition({ x: rect.left, y: rect.bottom + window.scrollY });
                               setActiveMenuId(c._id);
                             }}
-                            className="p-1 rounded hover:bg-slate-700 text-slate-400 transition-all cursor-pointer shrink-0 opacity-0 group-hover:opacity-100"
+                            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all cursor-pointer shrink-0 opacity-0 group-hover:opacity-100"
                             title="Thêm tùy chọn"
                           >
                             <IconDotsVertical size={13} />

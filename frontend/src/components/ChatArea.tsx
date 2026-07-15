@@ -559,7 +559,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center text-slate-500 text-sm">
-            Say hello to start the conversation!
+            {lang === 'vi' ? 'Bắt đầu cuộc trò chuyện!' : 'Start the conversation!'}
           </div>
         ) : (
           messages.map((m) => {
@@ -704,10 +704,10 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
             }
           }}
           placeholder={
-            uploading 
-              ? (lang === 'vi' ? 'Đang tải tệp đính kèm lên...' : 'Uploading attachment...') 
-              : recording 
-                ? (lang === 'vi' ? 'Đang ghi âm thoại...' : 'Recording voice...') 
+            uploading
+              ? (lang === 'vi' ? 'Đang tải tệp đính kèm lên...' : 'Uploading attachment...')
+              : recording
+                ? (lang === 'vi' ? 'Đang ghi âm thoại...' : 'Recording voice...')
                 : (lang === 'vi' ? 'Nhập tin nhắn...' : 'Type a message...')
           }
           className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
