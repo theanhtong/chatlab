@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   IconPin, IconSend, IconPaperclip,
   IconMicrophone, IconX, IconCircleDot,
-  IconChevronDown, IconChevronUp
+  IconChevronDown, IconChevronUp, IconShield
 } from '@tabler/icons-react';
 import { getSocket } from '../socket';
 import { API_URL } from '../config';
@@ -49,6 +49,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   const [recording, setRecording] = useState(false);
   const [recordTime, setRecordTime] = useState(0);
   const [pinnedExpanded, setPinnedExpanded] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -231,6 +232,49 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
     return senderId === otherUserId.toString();
   });
   const hasReceivedRequest = !!incomingRequestObj;
+
+  // Check block status when conversation or target user changes
+  useEffect(() => {
+    if (isDirectChat && otherUserId && token) {
+      fetch(`${API_URL}/blocked-users/check/${otherUserId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          setIsBlocked(data.blocked || false);
+        })
+        .catch(err => {
+          console.error('Failed to check block status:', err);
+          setIsBlocked(false);
+        });
+    } else {
+      setIsBlocked(false);
+    }
+  }, [isDirectChat, otherUserId, token, activeConversation]);
+
+  const handleUnblockUser = async () => {
+    if (!otherUserId) return;
+    try {
+      const res = await fetch(`${API_URL}/blocked-users/unblock`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ blockedUserId: otherUserId }),
+      });
+      if (res.ok) {
+        setIsBlocked(false);
+        alert('Đã bỏ chặn người dùng thành công!');
+        onFriendStatusChange();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Thao tác bỏ chặn thất bại.');
+      }
+    } catch (err) {
+      alert('Lỗi khi bỏ chặn người dùng.');
+    }
+  };
   // Format record duration
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -460,6 +504,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                       body: JSON.stringify({ blockedUserId: otherUserId }),
                     });
                     if (res.ok) {
+                      setIsBlocked(true);
                       alert('Đã chặn người dùng thành công!');
                       onFriendStatusChange();
                     } else {
@@ -689,76 +734,111 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
         </div>
       )}
 
-      {/* 5. Input Area */}
-      <div className="p-4 border-t border-slate-800 bg-slate-900 flex items-center gap-3 shrink-0">
-
-        {/* Attachment Upload Button */}
-        <label className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 cursor-pointer transition-colors shrink-0">
-          <input
-            type="file"
-            className="hidden"
-            disabled={uploading || recording}
-            onChange={handleFileUpload}
-            accept="image/*,audio/*"
-          />
-          <IconPaperclip size={20} />
-        </label>
-
-        {/* Text Area Input */}
-        <input
-          type="text"
-          value={inputText}
-          onChange={e => setInputText(e.target.value)}
-          disabled={uploading || recording}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              handleSend();
-            }
-          }}
-          placeholder={
-            uploading
-              ? (lang === 'vi' ? 'Đang tải tệp đính kèm lên...' : 'Uploading attachment...')
-              : recording
-                ? (lang === 'vi' ? 'Đang ghi âm thoại...' : 'Recording voice...')
-                : (lang === 'vi' ? 'Nhập tin nhắn...' : 'Type a message...')
-          }
-          className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
-        />
-
-        {/* Voice Recorder Indicator & Control Button */}
-        {recording ? (
-          <div className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-xl shrink-0">
-            <IconCircleDot size={16} className="text-rose-500 animate-pulse" />
-            <span className="text-xs font-mono font-bold text-rose-400">{formatTime(recordTime)}</span>
-            <button
-              onClick={stopRecording}
-              className="p-1 hover:bg-rose-500/20 text-rose-400 rounded-lg cursor-pointer"
-              title={lang === 'vi' ? 'Dừng và Gửi' : 'Stop and Send'}
-            >
-              <IconX size={16} />
-            </button>
+      {/* 5. Input Area / Blocked Banner */}
+      {isBlocked ? (
+        <div className={`p-5 border-t flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 transition-all ${
+          theme === 'light' 
+            ? 'border-slate-200/80 bg-slate-50 text-slate-700' 
+            : 'border-slate-800 bg-slate-900/60 text-slate-350'
+        }`}>
+          <div className="flex items-center gap-2">
+            <IconShield size={18} className="text-rose-500 shrink-0" />
+            <span className="text-xs font-semibold">
+              {lang === 'vi' ? 'Bạn đã chặn người dùng này.' : 'You have blocked this user.'}
+            </span>
           </div>
-        ) : (
           <button
-            onClick={startRecording}
-            disabled={uploading}
-            className="p-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-blue-400 cursor-pointer transition-colors shrink-0"
-            title={lang === 'vi' ? 'Ghi âm thoại' : 'Record voice'}
+            onClick={handleUnblockUser}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
           >
-            <IconMicrophone size={20} />
+            {lang === 'vi' ? 'Bỏ chặn' : 'Unblock'}
           </button>
-        )}
+        </div>
+      ) : (
+        <div className={`p-4 border-t flex items-center gap-3 shrink-0 transition-colors ${
+          theme === 'light' 
+            ? 'border-slate-200/80 bg-white text-slate-800' 
+            : 'border-slate-850 bg-slate-900 text-slate-200'
+        }`}>
 
-        {/* Send Button */}
-        <button
-          onClick={handleSend}
-          disabled={uploading || !inputText.trim()}
-          className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white cursor-pointer transition-all shrink-0 active:scale-95"
-        >
-          <IconSend size={20} />
-        </button>
+          {/* Attachment Upload Button */}
+          <label className={`p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer ${
+            theme === 'light' ? 'text-slate-500 hover:bg-slate-100' : 'text-slate-400 hover:bg-slate-800'
+          }`}>
+            <input
+              type="file"
+              className="hidden"
+              disabled={uploading || recording}
+              onChange={handleFileUpload}
+              accept="image/*,audio/*"
+            />
+            <IconPaperclip size={20} />
+          </label>
 
-      </div>
+          {/* Text Area Input */}
+          <input
+            type="text"
+            value={inputText}
+            onChange={e => setInputText(e.target.value)}
+            disabled={uploading || recording}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                handleSend();
+              }
+            }}
+            placeholder={
+              uploading
+                ? (lang === 'vi' ? 'Đang tải tệp đính kèm lên...' : 'Uploading attachment...')
+                : recording
+                  ? (lang === 'vi' ? 'Đang ghi âm thoại...' : 'Recording voice...')
+                  : (lang === 'vi' ? 'Nhập tin nhắn...' : 'Type a message...')
+            }
+            className={`flex-1 border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 transition-colors ${
+              theme === 'light'
+                ? 'bg-slate-50 border-slate-200 text-slate-800 placeholder:text-slate-400'
+                : 'bg-slate-950 border-slate-800 text-slate-200 placeholder:text-slate-600'
+            }`}
+          />
+
+          {/* Voice Recorder Indicator & Control Button */}
+          {recording ? (
+            <div className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-xl shrink-0">
+              <IconCircleDot size={16} className="text-rose-500 animate-pulse" />
+              <span className="text-xs font-mono font-bold text-rose-400">{formatTime(recordTime)}</span>
+              <button
+                onClick={stopRecording}
+                className="p-1 hover:bg-rose-500/20 text-rose-400 rounded-lg cursor-pointer"
+                title={lang === 'vi' ? 'Dừng và Gửi' : 'Stop and Send'}
+              >
+                <IconX size={16} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={startRecording}
+              disabled={uploading}
+              className={`p-2.5 rounded-xl transition-colors shrink-0 cursor-pointer ${
+                theme === 'light' 
+                  ? 'text-slate-500 hover:bg-slate-100 hover:text-blue-500' 
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-blue-400'
+              }`}
+              title={lang === 'vi' ? 'Ghi âm thoại' : 'Record voice'}
+            >
+              <IconMicrophone size={20} />
+            </button>
+          )}
+
+          {/* Send Button */}
+          <button
+            onClick={handleSend}
+            disabled={uploading || !inputText.trim()}
+            className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white cursor-pointer transition-all shrink-0 active:scale-95"
+          >
+            <IconSend size={20} />
+          </button>
+
+        </div>
+      )}
 
     </div>
   );
