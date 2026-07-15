@@ -34,22 +34,32 @@ export class UsersService {
     return this.userModel.findById(new Types.ObjectId(id)).exec();
   }
 
-  async updateOnlineStatus(userId: string, isOnline: boolean): Promise<UserDocument | null> {
-    return this.userModel.findByIdAndUpdate(
-      new Types.ObjectId(userId),
-      {
-        isOnline,
-        lastActiveAt: isOnline ? null : new Date(),
-      },
-      { new: true },
-    ).exec();
+  async updateOnlineStatus(
+    userId: string,
+    isOnline: boolean,
+  ): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(
+        new Types.ObjectId(userId),
+        {
+          isOnline,
+          lastActiveAt: isOnline ? null : new Date(),
+        },
+        { new: true },
+      )
+      .exec();
   }
 
-  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserDocument | null> {
-    return this.userModel.findByIdAndUpdate(
-      new Types.ObjectId(userId),
-      { $set: dto },
-      { new: true }
-    ).exec();
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(
+        new Types.ObjectId(userId),
+        { $set: dto },
+        { new: true },
+      )
+      .exec();
   }
 }

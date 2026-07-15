@@ -1,7 +1,14 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { FriendRequest, FriendRequestDocument } from './schemas/friend-request.schema';
+import {
+  FriendRequest,
+  FriendRequestDocument,
+} from './schemas/friend-request.schema';
 import { UsersService } from '../users/users.service';
 import { FriendsService } from '../friends/friends.service';
 import { BlockedUsersService } from '../blocked-users/blocked-users.service';
@@ -18,12 +25,12 @@ export class FriendRequestsService {
     private readonly friendsService: FriendsService,
     private readonly blockedUsersService: BlockedUsersService,
     private readonly chatGateway: ChatGateway,
-  ) { }
+  ) {}
 
-  async sendFriendRequest(senderId: string, receiverUsername: string): Promise<any> {
-    const receiver = await this.usersService.findByUsername(receiverUsername);
+  async sendFriendRequest(senderId: string, phone: string): Promise<any> {
+    const receiver = await this.usersService.findByPhone(phone);
     if (!receiver) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('User not found with this phone number');
     }
 
     const receiverId = receiver._id.toString();
@@ -32,33 +39,53 @@ export class FriendRequestsService {
       throw new BadRequestException('Cannot send friend request to yourself');
     }
 
-    const areAlreadyFriends = await this.friendsService.areFriends(senderId, receiverId);
+    const areAlreadyFriends = await this.friendsService.areFriends(
+      senderId,
+      receiverId,
+    );
     if (areAlreadyFriends) {
       throw new BadRequestException('You are already friends with this user');
     }
 
-    const isUserBlocked = await this.blockedUsersService.isBlocked(senderId, receiverId);
+    const isUserBlocked = await this.blockedUsersService.isBlocked(
+      senderId,
+      receiverId,
+    );
     if (isUserBlocked) {
-      throw new BadRequestException('Cannot send friend request due to blocking');
+      throw new BadRequestException(
+        'Cannot send friend request due to blocking',
+      );
     }
 
-    const existingRequest = await this.friendRequestModel.findOne({
-      $or: [
-        { senderId: new Types.ObjectId(senderId), receiverId: new Types.ObjectId(receiverId) },
-        { senderId: new Types.ObjectId(receiverId), receiverId: new Types.ObjectId(senderId) },
-      ],
-    }).exec();
+    const existingRequest = await this.friendRequestModel
+      .findOne({
+        $or: [
+          {
+            senderId: new Types.ObjectId(senderId),
+            receiverId: new Types.ObjectId(receiverId),
+          },
+          {
+            senderId: new Types.ObjectId(receiverId),
+            receiverId: new Types.ObjectId(senderId),
+          },
+        ],
+      })
+      .exec();
 
     if (existingRequest) {
       if (existingRequest.status === FriendRequestStatus.PENDING) {
-        throw new BadRequestException('A pending friend request already exists between you');
+        throw new BadRequestException(
+          'A pending friend request already exists between you',
+        );
       }
       if (existingRequest.status === FriendRequestStatus.ACCEPTED) {
         throw new BadRequestException('You are already friends with this user');
       }
       if (existingRequest.status === FriendRequestStatus.DECLINED) {
         if (existingRequest.senderId.toString() === senderId) {
-          throw new BadRequestException('Your previous friend request was declined by this user.');
+          throw new BadRequestException(
+            'Your previous friend request was declined by this user.',
+          );
         }
         existingRequest.senderId = new Types.ObjectId(senderId);
         existingRequest.receiverId = new Types.ObjectId(receiverId);
@@ -69,7 +96,11 @@ export class FriendRequestsService {
           model: 'User',
           select: '_id username displayName avatar',
         });
-        this.chatGateway.sendToUser(receiverId, SocketEvent.NEW_FRIEND_REQUEST, populatedRequest);
+        this.chatGateway.sendToUser(
+          receiverId,
+          SocketEvent.NEW_FRIEND_REQUEST,
+          populatedRequest,
+        );
         return {
           message: 'Friend request sent successfully',
           request: populatedRequest,
@@ -90,7 +121,11 @@ export class FriendRequestsService {
       select: '_id username displayName avatar',
     });
 
-    this.chatGateway.sendToUser(receiverId, SocketEvent.NEW_FRIEND_REQUEST, populatedRequest);
+    this.chatGateway.sendToUser(
+      receiverId,
+      SocketEvent.NEW_FRIEND_REQUEST,
+      populatedRequest,
+    );
 
     return {
       message: 'Friend request sent successfully',
@@ -99,10 +134,11 @@ export class FriendRequestsService {
   }
 
   async getIncomingPending(userId: string): Promise<FriendRequestDocument[]> {
-    return this.friendRequestModel.find({
-      receiverId: new Types.ObjectId(userId),
-      status: FriendRequestStatus.PENDING,
-    })
+    return this.friendRequestModel
+      .find({
+        receiverId: new Types.ObjectId(userId),
+        status: FriendRequestStatus.PENDING,
+      })
       .populate({
         path: 'senderId',
         model: 'User',
@@ -112,10 +148,11 @@ export class FriendRequestsService {
   }
 
   async getOutgoingPending(userId: string): Promise<FriendRequestDocument[]> {
-    return this.friendRequestModel.find({
-      senderId: new Types.ObjectId(userId),
-      status: FriendRequestStatus.PENDING,
-    })
+    return this.friendRequestModel
+      .find({
+        senderId: new Types.ObjectId(userId),
+        status: FriendRequestStatus.PENDING,
+      })
       .populate({
         path: 'receiverId',
         model: 'User',
@@ -125,21 +162,21 @@ export class FriendRequestsService {
   }
 
   async acceptFriendRequest(userId: string, requestId: string): Promise<any> {
-    const request = await this.friendRequestModel.findById(new Types.ObjectId(requestId)).exec();
+    const request = await this.friendRequestModel
+      .findOneAndUpdate(
+        {
+          _id: new Types.ObjectId(requestId),
+          receiverId: new Types.ObjectId(userId),
+          status: FriendRequestStatus.PENDING,
+        },
+        { status: FriendRequestStatus.ACCEPTED },
+        { new: true },
+      )
+      .exec();
+
     if (!request) {
-      throw new NotFoundException('Friend request not found');
+      throw new BadRequestException('Friend request not found or not pending');
     }
-
-    if (request.status !== FriendRequestStatus.PENDING) {
-      throw new BadRequestException('Friend request is not pending');
-    }
-
-    if (request.receiverId.toString() !== userId) {
-      throw new BadRequestException('You cannot accept this friend request');
-    }
-
-    request.status = FriendRequestStatus.ACCEPTED;
-    await request.save();
 
     const senderId = request.senderId.toString();
     const receiverId = request.receiverId.toString();
@@ -155,15 +192,17 @@ export class FriendRequestsService {
   }
 
   async declineFriendRequest(userId: string, requestId: string): Promise<any> {
-    const request = await this.friendRequestModel.findOneAndUpdate(
-      {
-        _id: new Types.ObjectId(requestId),
-        receiverId: new Types.ObjectId(userId),
-        status: FriendRequestStatus.PENDING,
-      },
-      { status: FriendRequestStatus.DECLINED },
-      { new: true },
-    ).exec();
+    const request = await this.friendRequestModel
+      .findOneAndUpdate(
+        {
+          _id: new Types.ObjectId(requestId),
+          receiverId: new Types.ObjectId(userId),
+          status: FriendRequestStatus.PENDING,
+        },
+        { status: FriendRequestStatus.DECLINED },
+        { new: true },
+      )
+      .exec();
 
     if (!request) {
       throw new BadRequestException('Friend request not found or not pending');
@@ -173,11 +212,13 @@ export class FriendRequestsService {
   }
 
   async cancelFriendRequest(userId: string, requestId: string): Promise<any> {
-    const request = await this.friendRequestModel.findOneAndDelete({
-      _id: new Types.ObjectId(requestId),
-      senderId: new Types.ObjectId(userId),
-      status: FriendRequestStatus.PENDING,
-    }).exec();
+    const request = await this.friendRequestModel
+      .findOneAndDelete({
+        _id: new Types.ObjectId(requestId),
+        senderId: new Types.ObjectId(userId),
+        status: FriendRequestStatus.PENDING,
+      })
+      .exec();
 
     if (!request) {
       throw new BadRequestException('Friend request not found or not pending');

@@ -5,6 +5,7 @@ import { UsersModule } from '../users/users.module';
 import { ConversationsModule } from '../conversations/conversations.module';
 import { MessagesModule } from '../messages/messages.module';
 import { MessageReceiptsModule } from '../message-receipts/message-receipts.module';
+import { BlockedUsersModule } from '../blocked-users/blocked-users.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { MessageReceiptsModule } from '../message-receipts/message-receipts.modu
     forwardRef(() => ConversationsModule),
     MessagesModule,
     forwardRef(() => MessageReceiptsModule),
+    BlockedUsersModule,
   ],
   providers: [ChatGateway],
   exports: [ChatGateway],

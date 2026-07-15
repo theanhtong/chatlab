@@ -12,7 +12,10 @@ export class FriendRequest {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   receiverId: Types.ObjectId;
 
-  @Prop({ default: FriendRequestStatus.PENDING, enum: Object.values(FriendRequestStatus) })
+  @Prop({
+    default: FriendRequestStatus.PENDING,
+    enum: Object.values(FriendRequestStatus),
+  })
   status: FriendRequestStatus;
 }
 

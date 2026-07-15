@@ -5,7 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('friends')
 @UseGuards(JwtAuthGuard)
 export class FriendsController {
-  constructor(private readonly friendsService: FriendsService) { }
+  constructor(private readonly friendsService: FriendsService) {}
 
   @Get()
   async getFriends(@Req() req: any) {

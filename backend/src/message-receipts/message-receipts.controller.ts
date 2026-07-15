@@ -5,7 +5,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('message-receipts')
 @UseGuards(JwtAuthGuard)
 export class MessageReceiptsController {
-  constructor(private readonly messageReceiptsService: MessageReceiptsService) {}
+  constructor(
+    private readonly messageReceiptsService: MessageReceiptsService,
+  ) {}
 
   @Post('seen')
   async markAsSeen(
@@ -14,7 +16,11 @@ export class MessageReceiptsController {
     @Body('messageId') messageId: string,
   ) {
     const userId = req.user.sub;
-    return this.messageReceiptsService.markAsSeen(userId, conversationId, messageId);
+    return this.messageReceiptsService.markAsSeen(
+      userId,
+      conversationId,
+      messageId,
+    );
   }
 
   @Post('delivered')

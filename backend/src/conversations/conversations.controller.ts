@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Delete, Patch, Body, Req, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Patch,
+  Body,
+  Req,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -10,20 +21,13 @@ export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   @Get()
-  async getConversations(
-    @Req() req: any,
-    @Query('archived') archived?: string,
-  ) {
+  async getConversations(@Req() req: any) {
     const userId = req.user.sub;
-    const isArchived = archived === 'true';
-    return this.conversationsService.getConversations(userId, isArchived);
+    return this.conversationsService.getConversations(userId);
   }
 
   @Get('search')
-  async searchConversations(
-    @Req() req: any,
-    @Query('q') queryText: string,
-  ) {
+  async searchConversations(@Req() req: any, @Query('q') queryText: string) {
     const userId = req.user.sub;
     return this.conversationsService.searchConversations(userId, queryText);
   }
@@ -38,10 +42,7 @@ export class ConversationsController {
   }
 
   @Post('group')
-  async createGroup(
-    @Req() req: any,
-    @Body() dto: CreateGroupDto,
-  ) {
+  async createGroup(@Req() req: any, @Body() dto: CreateGroupDto) {
     const userId = req.user.sub;
     return this.conversationsService.createGroup(userId, dto);
   }
@@ -53,7 +54,11 @@ export class ConversationsController {
     @Body('userId') targetUserId: string,
   ) {
     const userId = req.user.sub;
-    return this.conversationsService.addMember(conversationId, userId, targetUserId);
+    return this.conversationsService.addMember(
+      conversationId,
+      userId,
+      targetUserId,
+    );
   }
 
   @Delete('group/:id/members/:userId')
@@ -63,7 +68,11 @@ export class ConversationsController {
     @Param('userId') targetUserId: string,
   ) {
     const userId = req.user.sub;
-    return this.conversationsService.removeMember(conversationId, userId, targetUserId);
+    return this.conversationsService.removeMember(
+      conversationId,
+      userId,
+      targetUserId,
+    );
   }
 
   @Patch('group/:id/role')
@@ -74,7 +83,12 @@ export class ConversationsController {
     @Body('role') role: ParticipantRole,
   ) {
     const userId = req.user.sub;
-    return this.conversationsService.updateRole(conversationId, userId, targetUserId, role);
+    return this.conversationsService.updateRole(
+      conversationId,
+      userId,
+      targetUserId,
+      role,
+    );
   }
 
   @Patch('group/:id')
@@ -85,7 +99,12 @@ export class ConversationsController {
     @Body('avatar') avatar?: string,
   ) {
     const userId = req.user.sub;
-    return this.conversationsService.updateGroupDetails(conversationId, userId, name, avatar);
+    return this.conversationsService.updateGroupDetails(
+      conversationId,
+      userId,
+      name,
+      avatar,
+    );
   }
 
   @Patch(':id/pin')
@@ -98,13 +117,15 @@ export class ConversationsController {
     return this.conversationsService.togglePin(conversationId, userId, pin);
   }
 
-  @Patch(':id/archive')
-  async toggleArchive(
+  @Delete(':id')
+  async deleteConversation(
     @Req() req: any,
     @Param('id') conversationId: string,
-    @Body('archive') archive: boolean,
   ) {
     const userId = req.user.sub;
-    return this.conversationsService.toggleArchive(conversationId, userId, archive);
+    return this.conversationsService.deleteConversationForUser(
+      conversationId,
+      userId,
+    );
   }
 }

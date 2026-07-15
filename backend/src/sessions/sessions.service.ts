@@ -10,9 +10,17 @@ export class SessionsService {
     private readonly sessionModel: Model<SessionDocument>,
   ) {}
 
-  async create(userId: string, refreshToken: string, deviceInfo: string, expiresAt: Date): Promise<Session> {
+  async create(
+    userId: string,
+    refreshToken: string,
+    deviceInfo: string,
+    expiresAt: Date,
+  ): Promise<Session> {
     // Delete expired sessions for this user
-    await this.sessionModel.deleteMany({ userId: new Types.ObjectId(userId), expiresAt: { $lt: new Date() } });
+    await this.sessionModel.deleteMany({
+      userId: new Types.ObjectId(userId),
+      expiresAt: { $lt: new Date() },
+    });
 
     const newSession = new this.sessionModel({
       userId: new Types.ObjectId(userId),
@@ -24,10 +32,12 @@ export class SessionsService {
   }
 
   async findActiveSessionsByUserId(userId: string): Promise<SessionDocument[]> {
-    return this.sessionModel.find({
-      userId: new Types.ObjectId(userId),
-      expiresAt: { $gt: new Date() },
-    }).exec();
+    return this.sessionModel
+      .find({
+        userId: new Types.ObjectId(userId),
+        expiresAt: { $gt: new Date() },
+      })
+      .exec();
   }
 
   async deleteSession(userId: string, sessionId: string): Promise<any> {
@@ -37,7 +47,10 @@ export class SessionsService {
     });
   }
 
-  async deleteSessionByToken(userId: string, hashedRefreshToken: string): Promise<any> {
+  async deleteSessionByToken(
+    userId: string,
+    hashedRefreshToken: string,
+  ): Promise<any> {
     return this.sessionModel.deleteOne({
       userId: new Types.ObjectId(userId),
       refreshToken: hashedRefreshToken,

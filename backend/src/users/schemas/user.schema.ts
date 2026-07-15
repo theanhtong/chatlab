@@ -20,6 +20,15 @@ export class User {
   @Prop({ default: '' })
   bio: string;
 
+  @Prop({ default: '' })
+  coverImage: string;
+
+  @Prop({ default: 'Nam' })
+  gender: string;
+
+  @Prop({ default: '09/04/2005' })
+  birthDate: string;
+
   @Prop({ required: true, unique: true, trim: true })
   phone: string;
 
@@ -31,6 +40,12 @@ export class User {
 
   @Prop({ default: null })
   lastActiveAt: Date;
+
+  @Prop({ default: 'user', enum: ['user', 'admin'] })
+  role: string;
+
+  @Prop({ default: false })
+  isBanned: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

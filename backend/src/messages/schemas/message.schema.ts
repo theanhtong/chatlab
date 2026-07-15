@@ -34,6 +34,15 @@ export class Message {
   @Prop({ type: Types.ObjectId, ref: 'Message', default: null })
   parentId?: Types.ObjectId | null;
 
+  @Prop({ default: false })
+  isPinned: boolean;
+
+  @Prop({ type: Date, default: null })
+  pinnedAt: Date | null;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', default: null })
+  pinnedBy: Types.ObjectId | null;
+
   createdAt: Date;
   updatedAt: Date;
 }

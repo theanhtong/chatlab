@@ -10,7 +10,10 @@ export class Participant {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
-  @Prop({ default: ParticipantRole.MEMBER, enum: Object.values(ParticipantRole) })
+  @Prop({
+    default: ParticipantRole.MEMBER,
+    enum: Object.values(ParticipantRole),
+  })
   role: ParticipantRole;
 
   @Prop({ default: Date.now })
@@ -30,6 +33,9 @@ export class Participant {
 
   @Prop({ type: Date, default: null })
   archivedAt?: Date | null;
+
+  @Prop({ type: Date, default: null })
+  clearHistoryAt?: Date | null;
 }
 
 export const ParticipantSchema = SchemaFactory.createForClass(Participant);
