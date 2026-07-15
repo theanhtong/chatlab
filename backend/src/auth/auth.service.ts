@@ -72,7 +72,7 @@ export class AuthService {
         .exec();
 
       if (existingOtp) {
-        await this.otpModel
+        const updatedOtp = await this.otpModel
           .findByIdAndUpdate(
             existingOtp._id,
             { $inc: { attempts: 1 } },
@@ -80,7 +80,7 @@ export class AuthService {
           )
           .exec();
 
-        if (existingOtp.attempts >= 2) {
+        if (updatedOtp && updatedOtp.attempts >= 3) {
           await this.otpModel.findByIdAndDelete(existingOtp._id).exec();
           throw new BadRequestException(
             'Too many verification attempts. OTP has been invalidated.',

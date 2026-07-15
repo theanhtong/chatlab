@@ -163,22 +163,20 @@ export class FriendRequestsService {
 
   async acceptFriendRequest(userId: string, requestId: string): Promise<any> {
     const request = await this.friendRequestModel
-      .findById(new Types.ObjectId(requestId))
+      .findOneAndUpdate(
+        {
+          _id: new Types.ObjectId(requestId),
+          receiverId: new Types.ObjectId(userId),
+          status: FriendRequestStatus.PENDING,
+        },
+        { status: FriendRequestStatus.ACCEPTED },
+        { new: true },
+      )
       .exec();
+
     if (!request) {
-      throw new NotFoundException('Friend request not found');
+      throw new BadRequestException('Friend request not found or not pending');
     }
-
-    if (request.status !== FriendRequestStatus.PENDING) {
-      throw new BadRequestException('Friend request is not pending');
-    }
-
-    if (request.receiverId.toString() !== userId) {
-      throw new BadRequestException('You cannot accept this friend request');
-    }
-
-    request.status = FriendRequestStatus.ACCEPTED;
-    await request.save();
 
     const senderId = request.senderId.toString();
     const receiverId = request.receiverId.toString();

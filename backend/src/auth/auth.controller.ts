@@ -10,6 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RateLimit } from '../common/guards/rate-limiter.guard';
 import * as express from 'express';
 
 function extractRefreshToken(req: any): string | null {
@@ -44,21 +45,25 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('request-otp')
+  @RateLimit(5, 60000)
   async requestOtp(@Body('phone') phone: string) {
     return this.authService.requestOtp(phone);
   }
 
   @Post('register')
+  @RateLimit(5, 60000)
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @Post('verify-otp')
+  @RateLimit(5, 60000)
   async verifyOtp(@Body('phone') phone: string, @Body('code') code: string) {
     return this.authService.verifyOtp(phone, code);
   }
 
   @Post('login')
+  @RateLimit(5, 60000)
   async login(
     @Body() loginDto: LoginDto,
     @Headers('user-agent') userAgent: string,
